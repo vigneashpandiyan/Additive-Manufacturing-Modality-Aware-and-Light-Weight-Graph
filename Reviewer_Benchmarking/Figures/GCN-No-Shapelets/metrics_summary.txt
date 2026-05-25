@@ -1,0 +1,19 @@
+=================================================================
+SCIENTIFIC PERFORMANCE & RESOURCE SUMMARY: GCN-No-Shapelets (Latest Run)
+Based on Seed: 42
+=================================================================
+
+[PERFORMANCE METRICS]:
+  - Accuracy:     76.65%
+  - Precision:    77.25%
+  - Recall:       76.65%
+  - F1-Score:     76.83%
+  - ROC-AUC:      0.920
+
+[COMPUTATIONAL COMPLEXITY & RESOURCE EFFICIENCY]:
+  - Parameter Count:    N/A
+  - FLOPs Count:        N/A (Non-DL/Unavailable)
+  - Training Time:      297.60s
+  - Inference Latency:  0.039ms per sample
+  - Memory Footprint:   66.90 MB
+=================================================================

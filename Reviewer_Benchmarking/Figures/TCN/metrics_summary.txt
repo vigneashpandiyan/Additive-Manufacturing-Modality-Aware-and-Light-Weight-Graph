@@ -1,0 +1,19 @@
+=================================================================
+SCIENTIFIC PERFORMANCE & RESOURCE SUMMARY: TCN (Latest Run)
+Based on Seed: 42
+=================================================================
+
+[PERFORMANCE METRICS]:
+  - Accuracy:     76.60%
+  - Precision:    81.70%
+  - Recall:       76.60%
+  - F1-Score:     76.39%
+  - ROC-AUC:      0.970
+
+[COMPUTATIONAL COMPLEXITY & RESOURCE EFFICIENCY]:
+  - Parameter Count:    N/A
+  - FLOPs Count:        N/A (Non-DL/Unavailable)
+  - Training Time:      5003.44s
+  - Inference Latency:  0.298ms per sample
+  - Memory Footprint:   9021.76 MB
+=================================================================
