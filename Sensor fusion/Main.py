@@ -1,25 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Modality-Aware Graph Attention Network for In-Situ Composition Monitoring.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This script implements a Graph Neural Network with attention mechanisms for monitoring
-material composition during Laser Powder Bed Fusion (LPBF) processes using fused
-optical and acoustic emission sensor data.
+Implementation Includes:
+- Orchestrating the overall pipeline: environment initialization, data preprocessing, graph generation, network training, testing, and explanation.
+- Measuring model complexity, FLOPS, parameter footprints, and average latency (ms per sample).
 
-The implementation includes:
-- Data loading and preprocessing
-- Graph construction from time series data
-- Model training and evaluation
-- Extensive visualization capabilities
-
-@author: vpsora
-contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
-
-Note:
-    Any reuse of this code should be authorized by the code author.
-    Developed for the publication:
-    "Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-    in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
+Note: Any reuse of this code should be authorized by the code author.
 """
 # Libraries to import
 import os
@@ -51,6 +42,19 @@ except ImportError:
 
 
 def estimate_flops_analytical(num_shapelets, shapelet_len=50, num_nodes=19, window_size=500):
+    """
+    Description:
+        Analytically estimates total FLOPs count for the GNN model, based on shapelet extraction complexity and GAT multi-head projection dimensions.
+    Purpose:
+        To calculate model complexity analytically when standard profiler tools are unavailable.
+    Input Types:
+        - num_shapelets (int): Shapelets per channel.
+        - shapelet_len (int): Length of each shapelet. Default is 50.
+        - num_nodes (int): Number of nodes in the graph. Default is 19.
+        - window_size (int): Temporal window width. Default is 500.
+    Output Types:
+        - estimated_flops (int): Sum analytical FLOPs count.
+    """
     L = shapelet_len
     T = window_size
     shapelet_extraction_flops = 2 * num_nodes * num_shapelets * (T - L + 1) * (3 * L - 1)
@@ -59,6 +63,18 @@ def estimate_flops_analytical(num_shapelets, shapelet_len=50, num_nodes=19, wind
 
 
 def get_flops_profile(num_shapelets, num_classes, device):
+    """
+    Description:
+        Profiles the GNN model using the `thop` library when available and adds the analytical shapelet match FLOP calculations.
+    Purpose:
+        To provide complete FLOP profiles representing both the shapelet matching layer and structural attention layers.
+    Input Types:
+        - num_shapelets (int): Number of shapelets per channel.
+        - num_classes (int): Total output composition classes.
+        - device (torch.device): Computation device.
+    Output Types:
+        - total_flops (int): Total FLOP complexity.
+    """
     num_nodes = 19
     # Compute the analytical shapelet matching FLOPs
     L = shapelet_len
@@ -98,13 +114,14 @@ def get_flops_profile(num_shapelets, num_classes, device):
 # %%
 def initialize_environment():
     """
-    Initialize the computational environment with fixed random seeds and GPU settings.
-
-    This function:
-    - Sets random seeds for reproducibility
-    - Configures PyTorch for deterministic operations
-    - Clears GPU memory cache
-    - Initializes GPU random seed if available
+    Description:
+        Sets fixed seeds for PyTorch, NumPy, and random packages, locks CUDNN determinism, collects garbage, and clears GPU memory.
+    Purpose:
+        To ensure repeatable training and reproducible metric values across execution cycles.
+    Input Types:
+        - None
+    Output Types:
+        - None
     """
     torch.manual_seed(SEED)
     np.random.seed(SEED)
@@ -117,17 +134,18 @@ def initialize_environment():
 
 def initialize_model(num_classes, device):
     """
-    Initialize the GNN model with attention mechanisms.
-
-    Args:
-        num_classes: Number of output classes
-        device: Computation device ('cuda' or 'cpu')
-
-    Returns:
-        tuple: (model, optimizer, criterion)
-            - Initialized GNN model
-            - Adam optimizer
-            - CrossEntropyLoss criterion
+    Description:
+        Builds the `GNNWithAttention` model architecture, sets up the Adam optimizer (lr=0.005), and defines the CrossEntropyLoss criterion.
+    Purpose:
+        To configure initial framework states and optimizer hyperparameters.
+    Input Types:
+        - num_classes (int): Count of unique target classes.
+        - device (torch.device): Computation target device.
+    Output Types:
+        - tuple: (model, optimizer, criterion)
+            - model (GNNWithAttention): Instantiated network.
+            - optimizer (torch.optim.Adam): Configured optimizer.
+            - criterion (torch.nn.CrossEntropyLoss): Standard loss criterion.
     """
     model = GNNWithAttention(
         in_channels=num_shapelets * 2,
@@ -145,15 +163,19 @@ def initialize_model(num_classes, device):
 
 def run_visualizations(model, test_graphs, all_preds, all_labels, device, class_labels):
     """
-    Execute all visualization functions for model interpretation.
-
-    Args:
-        model: Trained GNN model
-        test_graphs: Test dataset graphs
-        all_preds: Model predictions
-        all_labels: Ground truth labels
-        device: Computation device
-        class_labels: List of class names
+    Description:
+        Runs complete visual explanation tools: saves initialized/trained shapelet arrays, class-wise node activation profiles, spatial attention heatmaps, PCA/t-SNE/UMAP dimension embeddings, and saliency gradients.
+    Purpose:
+        To execute framework post-training explainability functions.
+    Input Types:
+        - model (GNNWithAttention): Trained network.
+        - test_graphs (list): Test graph collection.
+        - all_preds (numpy.ndarray): Test predictions.
+        - all_labels (numpy.ndarray): Actual labels.
+        - device (torch.device): target computational device.
+        - class_labels (numpy.ndarray): Array of string category names.
+    Output Types:
+        - None: Direct exports of visual plots to Figures directory.
     """
     # Get correctly predicted examples
     correct_indices = (all_preds == all_labels).nonzero(as_tuple=True)[0]
@@ -198,6 +220,16 @@ def run_visualizations(model, test_graphs, all_preds, all_labels, device, class_
 
 
 def main():
+    """
+    Description:
+        Drives the core sensor fusion pipeline: sets up seeds, loads raw D1/D2 datasets, balances classes, structures graph collections, executes stratified splits, trains model parameters, evaluates test sets, and profiles complexity metrics.
+    Purpose:
+        To orchestrate the primary framework pipeline.
+    Input Types:
+        - None
+    Output Types:
+        - None: Runs entire training, evaluation, and logging sequence.
+    """
     """Main execution function for the LPBF monitoring system."""
     # Initialize environment
     initialize_environment()

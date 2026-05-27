@@ -1,8 +1,18 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
-@author: vpsora
-contact: vigneashwara.solairajapandiyan@utu.fi,vigneashpandiyan@gmail.com
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
+Implementation Includes:
+- Loading acoustic emission raw dataset (D2) and label space.
+- Normalizing raw acoustic waveforms to [-1, 1] range.
+- Running spectral/frequency feature extraction on multiple overlapping windows using FFT-based relative power bands.
+- Saving FFT feature matrices and labels for subsequent classification and visualization.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 # %%
 # Libraries to import

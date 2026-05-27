@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Data loading and preprocessing utilities for Reviewer Benchmarking.
-Reuses the dataset, standardization, and graph construction logic from the main repo.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Loading and parsing raw sensor inputs and composition label indices.
+- Constructing sequence vectors and batched datasets for 1D CNN, RNN, and TCN models.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os
@@ -22,7 +31,16 @@ if PROJECT_ROOT not in sys.path:
 from torch_geometric.data import Data
 
 def standardize(data: np.ndarray) -> np.ndarray:
-    """Standardize an array to zero mean and unit variance."""
+    """
+    Description:
+        Standardizes the input sensor signal array to zero mean and unit variance.
+    Purpose:
+        To stabilize input features across different modalities and support convergent gradient updates.
+    Input Types:
+        - data (numpy.ndarray): Multi-dimensional raw sensor data array.
+    Output Types:
+        - standardized (numpy.ndarray): Standardized sensor data array.
+    """
     print("[STANDARDIZATION] Performing standardization")
     mean = np.mean(data)
     std = np.std(data)
@@ -39,8 +57,18 @@ def create_shapelet_graph_batched(
     stride: int = 250,
 ) -> Data:
     """
-    Construct a fully-connected bidirectional graph from two-channel time series
-    via sliding windows.
+    Description:
+        Partitions two-channel signals using overlapping sliding windows to create a bidirectional, fully-connected Graph (PyTorch Geometric Data).
+    Purpose:
+        To map spatial-temporal waveform relations to nodes and edges in a graph representation.
+    Input Types:
+        - d1_sample (numpy.ndarray): 1D array of optical sensor signal values.
+        - d2_sample (numpy.ndarray): 1D array of acoustic sensor signal values.
+        - label (int): Alloy composition class index target.
+        - window_size (int): Temporal size of each window. Default is 500.
+        - stride (int): Overlap shift distance. Default is 250.
+    Output Types:
+        - Data (torch_geometric.data.Data): Graph containing window node tensors and edge index maps.
     """
     assert d1_sample.ndim == 1 and d2_sample.ndim == 1, "Inputs must be 1D arrays."
     assert d1_sample.shape[0] == d2_sample.shape[0], "Channel lengths must match."
@@ -83,7 +111,19 @@ DATA_FOLDER = os.path.join(PROJECT_ROOT, "Data")
 
 def load_raw_data(seed=SEED):
     """
-    Load raw sensor data and perform class balancing and standardization.
+    Description:
+        Loads raw D1/D2 and class label `.npy` files, balances instances per composition class using resampling, encodes target classes, and standardizes sensor data.
+    Purpose:
+        To form a clean, balanced, and normalized pre-processed dataset for benchmark models.
+    Input Types:
+        - seed (int): Seed number to initialize resampling and establish reproducibility.
+    Output Types:
+        - D1 (numpy.ndarray): Resampled and normalized D1 sensor data.
+        - D2 (numpy.ndarray): Resampled and normalized D2 sensor data.
+        - Y (numpy.ndarray): Balanced and encoded target composition classes.
+        - class_labels (numpy.ndarray): Mapping of encoded targets back to original labels.
+        - num_classes (int): Count of unique composition classes.
+        - label_encoder (sklearn.preprocessing.LabelEncoder): Encoder model used to map labels.
     """
     print("[DATA] Loading raw data...")
     D1_full = np.load(os.path.join(DATA_FOLDER, "D1_rawspace_5000.npy"))
@@ -125,7 +165,21 @@ def load_raw_data(seed=SEED):
 
 def get_sequence_datasets(D1, D2, Y, test_split=test_size, seed=SEED):
     """
-    Format data for sequence models. Input format: [B, 2, 5000]
+    Description:
+        Packages D1 and D2 arrays into sequence representations of size [Batch, Channels, Timesteps] and splits them stratifiably into training and testing sets.
+    Purpose:
+        To format time-series inputs correctly for 1D CNN, LSTM, TCN, and Transformer sequence baselines.
+    Input Types:
+        - D1 (numpy.ndarray): Normalised D1 sensor matrix.
+        - D2 (numpy.ndarray): Normalised D2 sensor matrix.
+        - Y (numpy.ndarray): Encoded label array.
+        - test_split (float): Ratio of testing subset.
+        - seed (int): Random seed to control data splits.
+    Output Types:
+        - X_train (numpy.ndarray): Structured train sequence inputs.
+        - X_test (numpy.ndarray): Structured test sequence inputs.
+        - y_train (numpy.ndarray): Train target sequence labels.
+        - y_test (numpy.ndarray): Test target sequence labels.
     """
     X = np.stack([D1, D2], axis=1) # Shape: [B, 2, 5000]
     
@@ -139,7 +193,19 @@ def get_sequence_datasets(D1, D2, Y, test_split=test_size, seed=SEED):
 
 def get_graph_datasets(D1, D2, Y, test_split=test_size, seed=SEED):
     """
-    Construct graph representation for graph models.
+    Description:
+        Translates raw multi-modal time series arrays into sets of windowed node graphs and stratifiably splits them into training and testing collections.
+    Purpose:
+        To construct graph representations necessary for evaluating proposed shapelet-GAT and baseline GNN architectures.
+    Input Types:
+        - D1 (numpy.ndarray): Raw D1 sensor matrix.
+        - D2 (numpy.ndarray): Raw D2 sensor matrix.
+        - Y (numpy.ndarray): Label target array.
+        - test_split (float): Proportion of the test split.
+        - seed (int): Seed number used for stratified random splits.
+    Output Types:
+        - train_graphs (list): Training collection of window graphs.
+        - test_graphs (list): Test collection of window graphs.
     """
     print("[DATA] Building graph dataset from time series (this may take a minute)...")
     graph_list = []

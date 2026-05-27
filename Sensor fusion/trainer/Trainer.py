@@ -1,32 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Training and evaluation functions for the multimodal GAT model.
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module provides complete training and evaluation workflows for:
-- Model training with progress tracking and checkpointing
-- Performance evaluation on validation/test sets
-- Metric visualization and reporting
-- Model inference timing
+Implementation Includes:
+- Standard training loops, validation scoring, model checkpointing, testing evaluations, and curve plotting utilities.
 
-Key Components:
-1. Main training loop with batch processing
-2. Model evaluation functions
-3. Performance metric calculation and visualization
-4. Model parameter counting
-5. Comprehensive test reporting
-
-Example Usage:
-    >>> model = GNNWithAttention(...)
-    >>> optimizer = torch.optim.Adam(model.parameters())
-    >>> criterion = nn.CrossEntropyLoss()
-    >>> trained_model, model_path = train_model(model, train_loader, test_loader,
-    ...                                        optimizer, criterion, device, class_labels)
-    >>> test_preds, test_labels = test_model(trained_model, test_loader, 
-    ...                                    device, label_encoder)
-    
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import time
@@ -51,28 +34,22 @@ from torch_geometric.loader import DataLoader
 
 def train_model(model, train_loader, test_loader, optimizer, criterion, device, class_labels):
     """
-    Train the GNN model with full training workflow.
-
-    Args:
-        model: The GNN model to train
-        train_loader: DataLoader for training data
-        test_loader: DataLoader for validation data
-        optimizer: Optimization algorithm
-        criterion: Loss function
-        device: Computation device ('cuda' or 'cpu')
-        class_labels: List of class names for reporting
-
-    Returns:
-        tuple: (best_model, model_save_path)
-            best_model: Model with best validation performance
-            model_save_path: Path to saved model checkpoint
-
-    Training Process:
-        1. Iterates through specified number of epochs
-        2. Processes batches with forward/backward passes
-        3. Tracks training loss and validation accuracy
-        4. Saves best performing model
-        5. Generates training metrics visualization
+    Description:
+        Runs the full model training process: iterates over epochs, executes forward and backward passes, calculates loss standard deviations, saves checkpoints of the best model, and calls plotting utilities.
+    Purpose:
+        To optimize model weights dynamically during framework training.
+    Input Types:
+        - model (GNNWithAttention): Model to train.
+        - train_loader (DataLoader): PyG DataLoader containing the training set.
+        - test_loader (DataLoader): PyG DataLoader containing the test set (used for validation).
+        - optimizer (torch.optim.Optimizer): Optimizer algorithm model.
+        - criterion (torch.nn.modules.loss._Loss): Criterion loss model.
+        - device (torch.device): computational device target.
+        - class_labels (list): String class labels names array.
+    Output Types:
+        - tuple: (best_model, model_save_path)
+            - best_model (GNNWithAttention): Best performing checkpoint.
+            - model_save_path (str): File path where parameters are saved.
     """
     print(f"Starting training on {device}...")
     start_time = time.time()
@@ -130,37 +107,30 @@ def train_model(model, train_loader, test_loader, optimizer, criterion, device, 
 
 def count_parameters(model):
     """
-    Count the total number of trainable parameters in a model.
-
-    Args:
-        model: PyTorch model to analyze
-
-    Returns:
-        int: Total number of trainable parameters
-
-    Example:
-        >>> model = GNNWithAttention(...)
-        >>> print(f"Parameters: {count_parameters(model):,}")
-        Parameters: 1,234,567
+    Description:
+        Counts the total number of trainable parameter weights within the given model.
+    Purpose:
+        To calculate and report model capacity metrics.
+    Input Types:
+        - model (torch.nn.Module): Target PyTorch network model.
+    Output Types:
+        - parameter_count (int): Sum trainable parameters count.
     """
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def evaluate_model(model, loader, device):
     """
-    Evaluate model performance on a given dataset.
-
-    Args:
-        model: Trained model to evaluate
-        loader: DataLoader for evaluation data
-        device: Computation device ('cuda' or 'cpu')
-
-    Returns:
-        float: Accuracy score on the evaluation data
-
-    Note:
-        Sets model to eval() mode during evaluation
-        Uses torch.no_grad() to disable gradient computation
+    Description:
+        Evaluates the model on a target dataset, measuring classification accuracy under eval mode with gradient tracking disabled.
+    Purpose:
+        To test model accuracy on unseen subsets during optimization.
+    Input Types:
+        - model (torch.nn.Module): Trained model to evaluate.
+        - loader (DataLoader): Loader containing evaluation data.
+        - device (torch.device): target computational device.
+    Output Types:
+        - accuracy (float): Classification accuracy score.
     """
     model.eval()
     correct = 0
@@ -177,23 +147,17 @@ def evaluate_model(model, loader, device):
 
 def plot_training_metrics(train_loss_means, train_loss_stds, val_accuracies, epoch_times):
     """
-    Generate and save training metric visualizations.
-
-    Args:
-        train_loss_means: List of mean training losses per epoch
-        train_loss_stds: List of training loss standard deviations per epoch
-        val_accuracies: List of validation accuracies per epoch
-        epoch_times: List of epoch durations in seconds
-
-    Saves:
-        - Training loss curve with std deviation
-        - Validation accuracy curve
-        - Epoch timing curve
-
-    Files are saved to the plot_folder directory as:
-        - train_loss_curve.png
-        - val_accuracy_curve.png
-        - epoch_time_curve.png
+    Description:
+        Generates and exports three PNG plots depicting: (1) training loss with batch-level standard deviation shading, (2) validation accuracy over epochs, and (3) computation time per epoch.
+    Purpose:
+        To save visual learning logs for manuscript validation.
+    Input Types:
+        - train_loss_means (list): Average epoch training losses.
+        - train_loss_stds (list): Batch standard deviations.
+        - val_accuracies (list): Validation accuracies per epoch.
+        - epoch_times (list): Training seconds per epoch.
+    Output Types:
+        - None: Saves PNG figures to Figures folder.
     """
     epochs = list(range(1, len(train_loss_means) + 1))
 
@@ -236,24 +200,19 @@ def plot_training_metrics(train_loss_means, train_loss_stds, val_accuracies, epo
 
 def test_model(model, test_loader, device, label_encoder):
     """
-    Comprehensive model testing and reporting.
-
-    Args:
-        model: Trained model to test
-        test_loader: DataLoader for test data
-        device: Computation device ('cuda' or 'cpu')
-        label_encoder: Fitted LabelEncoder for class labels
-
-    Returns:
-        tuple: (all_preds, all_labels)
-            all_preds: Tensor of model predictions
-            all_labels: Tensor of ground truth labels
-
-    Outputs:
-        - Prints test accuracy and classification report
-        - Generates and saves confusion matrices
-        - Reports inference timing
-        - Shows normalized and absolute confusion matrices
+    Description:
+        Evaluates a trained model on a test dataset, measures inference timing, prints a classification report, and exports absolute and normalized confusion matrices.
+    Purpose:
+        To perform comprehensive framework validation testing and save final reporting outputs.
+    Input Types:
+        - model (torch.nn.Module): Trained model to test.
+        - test_loader (DataLoader): Loader containing test data.
+        - device (torch.device): computational device target.
+        - label_encoder (LabelEncoder): Fitted encoder model used to map labels back to category names.
+    Output Types:
+        - tuple: (all_preds, all_labels)
+            - all_preds (torch.Tensor): Output model predictions.
+            - all_labels (torch.Tensor): Ground truth targets.
     """
     model.eval()
     all_preds, all_labels = [], []

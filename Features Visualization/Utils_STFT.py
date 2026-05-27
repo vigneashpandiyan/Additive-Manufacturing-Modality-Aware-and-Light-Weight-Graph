@@ -1,5 +1,18 @@
-import matplotlib.pyplot as plt
-import numpy as np
+# -*- coding: utf-8 -*-
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Computing Short-Time Fourier Transforms (STFT) on raw sensor window waveforms.
+- Plotting and saving spectrogram energy responses for various PBF-LB composition levels.
+
+Note: Any reuse of this code should be authorized by the code author.
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,18 +23,20 @@ from scipy import signal
 def Frequencyplot_STFT(rawspace_list, labels_list, class_labels,
                        folder_created, sample_rate, windowsize, channel=0):
     """
-    Generate a grid of STFT plots (Short-Time Fourier Transform) for each class.
-    If the number of classes is odd, the last plot is centered.
-    Includes a common colorbar legend for all plots.
-
-    Parameters:
-    - rawspace_list: List of (CH1, CH2) tuples
-    - labels_list: List of integer class labels
-    - class_labels: Dict mapping label → name
-    - folder_created: Directory to save the figure
-    - sample_rate: Sampling rate in Hz
-    - windowsize: For matplotlib performance
-    - channel: 0 = CH1 (Acoustic), 1 = CH2 (Optical)
+    Description:
+        Generates and saves a grid of Short-Time Fourier Transform (STFT) spectrogram plots for each alloy composition class, centering the last subplot if odd.
+    Purpose:
+        To examine temporal-spectral characteristics of raw sensory signals at different alloy composition ratios.
+    Input Types:
+        - rawspace_list (list): List of (CH1, CH2) signal tuples.
+        - labels_list (list): Integer composition label array.
+        - class_labels (dict): Integer-to-string composition mapping dict.
+        - folder_created (str): Directory where the output spectrogram figure will be saved.
+        - sample_rate (int): Frequency sampling rate in Hz.
+        - windowsize (int): Placeholder parameter for legacy signature compatibility.
+        - channel (int): Selected channel index (0 for Acoustic, 1 for Optical).
+    Output Types:
+        - save_path (str): File path of the saved PNG figure.
     """
     assert channel in [0, 1], "Channel must be 0 (CH1) or 1 (CH2)"
     if not os.path.exists(folder_created):

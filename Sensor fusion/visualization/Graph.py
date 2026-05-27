@@ -1,29 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Temporal Graph Visualization Module
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module provides functions to visualize various graph representations
-for temporal data analysis in multimodal sensor fusion applications.
+Implementation Includes:
+- Constructing fully connected and optimized spring graph layout representations to map multi-modal interactions.
 
-Key Visualizations:
-1. Fully connected temporal graph with bidirectional edges
-2. Spring-layout graph with optimized edge drawing
-3. Linear temporal progression graph
-
-The visualizations demonstrate:
-- Node representations of time windows
-- Channel-specific sensor data (Acoustic and Back-reflection)
-- Temporal relationships between nodes
-- Edge directionality and coloring schemes
-
-@author: vpsora
-Created on: Wed Aug  6 23:25:33 2025
-
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
-
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import matplotlib.patches as mpatches
@@ -36,21 +22,14 @@ from matplotlib.lines import Line2D
 
 def plot_temporal_graph_representation():
     """
-    Visualize a linear temporal graph representation with sequential nodes.
-
-    This function creates a directed graph where nodes represent consecutive 
-    time windows and edges connect adjacent windows. Each node contains:
-    - Acoustic channel indicator (▲)
-    - Back-reflection channel indicator (▼)
-    - Time window labels
-
-    The visualization demonstrates:
-    - Temporal progression from left to right
-    - Node-specific time window information
-    - Sensor channel indicators
-
-    Output:
-    - Saves and displays a linear temporal graph visualization
+    Description:
+        Constructs and visualizes a linear temporal graph representation with sequential nodes and directed edges, marking sensory modalities inside nodes, and saves the plot as a PNG.
+    Purpose:
+        To save illustrative linear graph representation figures.
+    Input Types:
+        - None
+    Output Types:
+        - None
     """
     total_nodes = 8
     G = nx.DiGraph()
@@ -145,17 +124,14 @@ def plot_temporal_graph_representation():
 
 def create_fully_connected_graph():
     """
-    Create and visualize a fully connected temporal graph with bidirectional edges.
-
-    Features:
-    - Nodes positioned diagonally to show temporal progression
-    - Green edges for forward temporal connections (i→j where i<j)
-    - Violet edges for backward connections (j→i where j>i)
-    - Channel indicators (▲/▼) for each node
-    - Detailed node labels with time window information
-
-    Output:
-    - Displays a fully connected graph visualization
+    Description:
+        Constructs and visualizes a fully connected temporal graph with bidirectional edges, highlighting forward (green) and backward (purple) temporal dependencies.
+    Purpose:
+        To save illustrative representations of fully connected spatial structures.
+    Input Types:
+        - None
+    Output Types:
+        - None
     """
     # === Parameters ===
     num_primary_nodes = 8
@@ -297,27 +273,28 @@ def create_fully_connected_graph():
 
 def create_optimized_spring_graph():
     """
-    Create and visualize a fully connected graph with spring layout optimization.
-
-    Features:
-    - Spring layout for better node distribution
-    - Custom arrow drawing to avoid node overlaps
-    - Color-coded edges based on source node
-    - Channel indicators for each node
-    - Comprehensive legend
-
-    Output:
-    - Displays an optimized spring-layout graph visualization
+    Description:
+        Constructs and visualizes a fully connected graph utilizing spring layout optimizations to map window relationships with custom arrow offsets.
+    Purpose:
+        To save illustrative optimized spring layout representations.
+    Input Types:
+        - None
+    Output Types:
+        - None
     """
     def draw_outside_only_arrows(G, pos, ax, node_size=3500):
         """
-        Draw arrows between nodes without overlapping node boundaries.
-
-        Args:
-            G: NetworkX graph
-            pos: Node positions dictionary
-            ax: Matplotlib axis object
-            node_size: Size of nodes for boundary calculation
+        Description:
+            Draws arrows between nodes without overlapping node boundaries by offsetting coordinates according to node size.
+        Purpose:
+            To prevent visual arrow-node overlaps.
+        Input Types:
+            - G (networkx.DiGraph): Target directed graph.
+            - pos (dict): Positions map dictionary.
+            - ax (matplotlib.axes.Axes): Target axis plot object.
+            - node_size (int): Size of nodes. Default is 3500.
+        Output Types:
+            - None: Draws patches onto the axis directly.
         """
         radius = np.sqrt(node_size) / 2000
         safety_margin = 0.1

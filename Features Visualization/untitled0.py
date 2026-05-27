@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Generating simulated spread and density data for multiple layer thicknesses (70 µm to 110 µm).
+- Implementing multi-grid subplots using matplotlib GridSpec.
+- Plotting kernel density estimates (KDE) with color-coded palettes to analyze simulated sensor distributions.
+
+Note: Any reuse of this code should be authorized by the code author.
+"""
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np

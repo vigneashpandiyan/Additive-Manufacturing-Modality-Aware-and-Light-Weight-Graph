@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Loading raw D1 (optical) and D2 (acoustic) sensors and categorical labels.
+- Selecting random representative samples for each Cu-composition class (20% to 100% Cu).
+- Invoking FFT plotting utilities to generate and save comparative frequency domain visualizations per sensor channel.
+
+Note: Any reuse of this code should be authorized by the code author.
+"""
+
 import os
 import numpy as np
 from Utils_FFT import *  # Uses internal loop per sample, per channel
@@ -18,7 +34,16 @@ scales = np.arange(1, 128)
 
 
 def normalize(data):
-    """Normalize data to [-1, 1] range"""
+    """
+    Description:
+        Normalizes input data array to the range [-1, 1] using min-max scaling.
+    Purpose:
+        To scale multi-modal sensor inputs to a standard range to facilitate stable training and consistent visualization.
+    Input Types:
+        - data (numpy.ndarray): The raw sensor signal array to be normalized.
+    Output Types:
+        - normalized (numpy.ndarray): The normalized sensor signal array.
+    """
     print("[NORMALIZATION] Performing Min-Max normalization to [-1, 1]")
     data_min = np.min(data)
     data_max = np.max(data)

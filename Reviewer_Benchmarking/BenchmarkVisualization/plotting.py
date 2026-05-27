@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Visualization and plotting utilities.
-Generates comparative performance plots, learning curves, and confusion matrices.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Plotting confusion matrices, cumulative validation curves, and parameter vs. accuracy resource comparison plots.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os
@@ -12,8 +20,15 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 def generate_plots(aggregated_df, save_folder):
     """
-    Generate professional, publication-quality bar plots comparing Accuracy and F1-Score
-    of all models with 95% Confidence Interval error bars. Gridlines are explicitly disabled.
+    Description:
+        Generates professional, publication-quality bar plots comparing Accuracy and F1-Score of all models with 95% Confidence Interval error bars. Gridlines are explicitly disabled.
+    Purpose:
+        To present unified macro-evaluation metrics side-by-side.
+    Input Types:
+        - aggregated_df (pandas.DataFrame): Aggregated model evaluations.
+        - save_folder (str): Directory where the figure will be saved.
+    Output Types:
+        - None: Saves the figure directly to disk and renders it.
     """
     os.makedirs(save_folder, exist_ok=True)
     
@@ -56,8 +71,18 @@ def generate_plots(aggregated_df, save_folder):
 
 def plot_model_confusion_matrices(model_name, preds, labels, classes, save_folder):
     """
-    Generate and save absolute and row-normalized confusion matrices for a given model.
-    Saves the images directly into the specified model folder. Gridlines are explicitly disabled.
+    Description:
+        Computes absolute and row-normalized percentage confusion matrices and visualizes them using ConfusionMatrixDisplay with explicit grids off.
+    Purpose:
+        To evaluate class-wise confusion behaviors for in-situ compositions.
+    Input Types:
+        - model_name (str): Label identifier of the model.
+        - preds (numpy.ndarray): Predicted classes.
+        - labels (numpy.ndarray): Actual targets.
+        - classes (list): String sequence names of alloy categories.
+        - save_folder (str): Target export path.
+    Output Types:
+        - None: Directly outputs confusion matrix images.
     """
     os.makedirs(save_folder, exist_ok=True)
     num_classes = len(classes)
@@ -93,9 +118,18 @@ def plot_model_confusion_matrices(model_name, preds, labels, classes, save_folde
 
 def plot_training_val_curves(model_name, losses, stds, val_accs, save_folder):
     """
-    Generate and save training loss and validation accuracy over epochs for a given model
-    in a clean 1x2 layout. Shading represents standard deviation of batch losses for that epoch.
-    All gridlines are explicitly disabled.
+    Description:
+        Creates a side-by-side 1x2 figure showing the training loss (with shaded standard deviation) and the validation accuracy trend over epochs.
+    Purpose:
+        To analyze the learning stability and convergence profiles of benchmarking models.
+    Input Types:
+        - model_name (str): Evaluated model's name.
+        - losses (numpy.ndarray or list): Average epoch training losses.
+        - stds (numpy.ndarray or list): Batch-level standard deviations.
+        - val_accs (numpy.ndarray or list): Validation accuracy scores per epoch.
+        - save_folder (str): Export path.
+    Output Types:
+        - None: Directly saves training curves to disk.
     """
     os.makedirs(save_folder, exist_ok=True)
     
@@ -137,10 +171,16 @@ def plot_training_val_curves(model_name, losses, stds, val_accs, save_folder):
 
 def plot_cumulative_val_curves(model_histories, save_folder, latest_only=False):
     """
-    Generate and save multiple figures comparing mean Validation metrics over epochs 
-    for all DL models side-by-side (Accuracy, F1-Score, and ROC-AUC).
-    If latest_only is True, plots the latest seed run instead of the seed average.
-    All gridlines are explicitly disabled.
+    Description:
+        Aggregates learning histories of all deep learning architectures and draws multi-line validation curves comparing Accuracy, F1-Score, and ROC-AUC scores over training epochs.
+    Purpose:
+        To benchmark optimization trajectories and learning efficiency between baselines.
+    Input Types:
+        - model_histories (dict): Nested dictionary holding epoch validation arrays for models.
+        - save_folder (str): Path of the export directory.
+        - latest_only (bool): Plot the last run sequence if True; otherwise, plot seed averages. Default is False.
+    Output Types:
+        - None: Saves multi-line learning comparison figures.
     """
     os.makedirs(save_folder, exist_ok=True)
     if not model_histories:
@@ -207,8 +247,15 @@ def plot_cumulative_val_curves(model_histories, save_folder, latest_only=False):
 
 def plot_model_complexities(aggregated_df, save_folder):
     """
-    Generate a professional bar plot comparing the number of trainable parameters
-    across all deep learning models. Gridlines are explicitly disabled.
+    Description:
+        Plots the parameter size comparisons of all deep learning baselines using a logarithmic vertical scale with dynamic parameter size value annotations on top of the bars.
+    Purpose:
+        To visually inspect the parameter footprint and confirm the lightweight nature of the proposed framework.
+    Input Types:
+        - aggregated_df (pandas.DataFrame): Aggregated performance and resource metrics.
+        - save_folder (str): Export path.
+    Output Types:
+        - None: Exports parameter comparison plot to disk.
     """
     os.makedirs(save_folder, exist_ok=True)
     
@@ -252,9 +299,15 @@ def plot_model_complexities(aggregated_df, save_folder):
 
 def generate_resource_comparison_plots(aggregated_df, save_folder):
     """
-    Generate separate, publication-quality bar plots comparing FLOPs count, Training Time,
-    Inference Latency, and Memory Footprint across all active models with 95% CI error bars.
-    Gridlines are explicitly disabled.
+    Description:
+        Generates individual bar charts benchmarking models across computational and physical resource metrics: FLOPs (log-scale), Total training seconds, Average inference latency (ms), and Peak Memory usage (MB) with 95% Confidence Intervals.
+    Purpose:
+        To provide complete, multi-dimensional complexity and execution cost profiles.
+    Input Types:
+        - aggregated_df (pandas.DataFrame): Aggregated benchmarking parameters and metrics.
+        - save_folder (str): Directory where resource comparison plots will be written.
+    Output Types:
+        - None: Saves resource comparison bar plots to the disk.
     """
     os.makedirs(save_folder, exist_ok=True)
     plt.style.use('seaborn-v0_8-white' if 'seaborn-v0_8-white' in plt.style.available else 'default')

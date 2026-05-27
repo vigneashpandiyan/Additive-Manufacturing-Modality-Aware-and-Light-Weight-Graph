@@ -1,31 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Visualization functions for the multimodal GAT project.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module provides visualization tools for:
-- Raw time series data exploration
-- Learned shapelet visualization and comparisons
-- Shapelet activation maps per class/channel (balanced subsets)
-- Global and class-wise GAT attention heatmaps
-- Low-dimensional graph embedding visualizations (e.g., t-SNE)
+Implementation Includes:
+- Stunning visual suites: attention heatmap maps, 2D/3D dimension embeddings (t-SNE, PCA, UMAP), shapelet comparison curves, and stacked class-wise node activation graphs.
 
-Notes
------
-- Functions are designed to be "drop-in": signatures preserved.
-- Minimal refactors: duplicate imports removed; small f-strings fixed.
-- Class label mapping is kept (0..4) -> {"20%-Cu", ..., "100%-Cu"}.
-
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 from typing import Dict, List, Optional, Sequence, Tuple
-
 import os
 from collections import defaultdict
-
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -43,10 +32,6 @@ from sklearn.metrics import classification_report, confusion_matrix  # noqa: F40
 from sklearn.utils import resample
 from torch_geometric.nn import GATConv  # noqa: F401
 
-# -----------------------------------------------------------------------------
-# 1) RAW SERIES VISUALIZATION
-# -----------------------------------------------------------------------------
-
 
 def plot_combined_series(
     D1: np.ndarray,
@@ -59,33 +44,21 @@ def plot_combined_series(
     highlight_regions: Optional[Dict[int, List[Tuple[float, float]]]] = None,
 ) -> None:
     """
-    Plot paired raw time-series (Acoustic vs Back-reflection) for each class.
-
-    For each class in Y, selects up to `num_samples_per_class` random samples,
-    and plots Channel-1 (AE) and Channel-2 (Back-reflection) in two columns.
-    AE y-limits are uniform across classes; Back-reflection y-limits adapt per row.
-
-    Parameters
-    ----------
-    D1, D2 : np.ndarray, shape (N, L)
-        Channel-1 (AE) and Channel-2 (Back-reflection) arrays.
-    Y : np.ndarray, shape (N,)
-        Integer class labels (expected 0..4).
-    plot_folder : str, optional
-        If provided, saves figure to this folder as 'timeseries_comparison.png'.
-    num_samples_per_class : int
-        Number of traces per class to display (randomly sampled).
-    sampling_rate : float
-        Samples per second (Hz) for time axis construction.
-    figsize : tuple(float, float), optional
-        Matplotlib figure size. If None, set based on #classes.
-    highlight_regions : dict[int, list[tuple(float, float)]], optional
-        Per-class list of (start_time, end_time) spans to highlight.
-
-    Notes
-    -----
-    - X ticks are set to [0, 2.5, 5, 7.5, 10, 12.5] if they fit the time range.
-    - Class name mapping below can be adapted to your dataset.
+    Description:
+        Plots raw, time-synchronous waveforms from dual sensor modalities (Acoustic Emission and Back-reflection/Optical) side-by-side for each Cu-composition class. Scales y-axes consistently for acoustic signals while adapting optical scales dynamically.
+    Purpose:
+        To perform raw multi-modal signal comparison and generate introductory dataset overview plots.
+    Input Types:
+        - D1 (numpy.ndarray): Multi-sample Acoustic Emission waveform matrix.
+        - D2 (numpy.ndarray): Multi-sample Back-reflection waveform matrix.
+        - Y (numpy.ndarray): Sequence of category labels per sample.
+        - plot_folder (str, optional): Target output directory.
+        - num_samples_per_class (int): Count of random sample traces to render per category. Default is 1.
+        - sampling_rate (float): Time-axis sampling rate in Hz. Default is 400_000.
+        - figsize (tuple, optional): Size dimensions.
+        - highlight_regions (dict, optional): Map of timestamps to highlight.
+    Output Types:
+        - None: Saves the figure as a PNG to disk.
     """
     if isinstance(num_samples_per_class, str):
         try:
@@ -214,10 +187,6 @@ def plot_combined_series(
     plt.close()
 
 
-# -----------------------------------------------------------------------------
-# 2) SHAPELET VISUALIZATIONS
-# -----------------------------------------------------------------------------
-
 def visualize_shapelets(
     shapelets_ch1,
     shapelets_ch2,
@@ -225,16 +194,17 @@ def visualize_shapelets(
     save_name: str = "Learned Shapelets",
 ) -> None:
     """
-    Visualize learned shapelets for both channels side-by-side.
-
-    Parameters
-    ----------
-    shapelets_ch1, shapelets_ch2 : (Tensor | np.ndarray), shape (K, L)
-        Shapelet banks for Channel-1 and Channel-2 (assumed same K, L).
-    plot_folder : str, optional
-        If provided, saves figure as <save_name>.png inside this folder.
-    save_name : str
-        Base filename for the saved plot (without extension).
+    Description:
+        Renders learned shapelet filter values side-by-side (Channel-1 on left, Channel-2 on right) across all shapelet index rows. Computes and locks uniform y-limits across plots for direct comparability.
+    Purpose:
+        To visually inspect learned temporal shapelets.
+    Input Types:
+        - shapelets_ch1 (Tensor or numpy.ndarray): Channel 1 shapelet weight parameters of shape [K, L].
+        - shapelets_ch2 (Tensor or numpy.ndarray): Channel 2 shapelet weight parameters of shape [K, L].
+        - plot_folder (str, optional): Target output directory.
+        - save_name (str): Output PNG base filename. Default is "Learned Shapelets".
+    Output Types:
+        - None: Saves the figure as a PNG to disk.
     """
     # Convert tensors to numpy
     if isinstance(shapelets_ch1, torch.Tensor):
@@ -319,19 +289,19 @@ def plot_shapelets_side_by_side(
     plot_folder: Optional[str] = None,
 ) -> None:
     """
-    Overlay initial vs trained shapelets for both channels.
-
-    Initial = dotted grey; Trained = solid red/navy.
-    Keeps global y-limits consistent across channels/shapelets.
-
-    Parameters
-    ----------
-    ch1_init, ch1_trained, ch2_init, ch2_trained : (Tensor | np.ndarray), (K, L)
-        Shapelet banks before/after training.
-    save_name : str
-        Output base filename (without extension).
-    plot_folder : str, optional
-        If provided, saves figure to this folder.
+    Description:
+        Overlays initial (untrained) shapelet parameters (dotted grey line) against trained/optimized parameter outputs (solid line) for both sensory channels.
+    Purpose:
+        To visualize shapelet parameter evolution and training dynamics.
+    Input Types:
+        - ch1_init (Tensor or numpy.ndarray): Channel 1 initial weights.
+        - ch1_trained (Tensor or numpy.ndarray): Channel 1 current weights.
+        - ch2_init (Tensor or numpy.ndarray): Channel 2 initial weights.
+        - ch2_trained (Tensor or numpy.ndarray): Channel 2 current weights.
+        - save_name (str): Output PNG base filename. Default is "compare_shapelets_overlayed".
+        - plot_folder (str, optional): Target output directory.
+    Output Types:
+        - None: Saves the figure as a PNG to disk.
     """
     # Convert to numpy
     def to_np(x): return x.detach().cpu().numpy(
@@ -349,6 +319,8 @@ def plot_shapelets_side_by_side(
                      np.min(ch2_init), np.min(ch2_trained))
     global_max = max(np.max(ch1_init), np.max(ch1_trained),
                      np.max(ch2_init), np.max(ch2_trained))
+    y_padding = (global_max - min_min if (global_max - global_min) > 0 else 1.0) * 0.1
+    # Simple bounds check
     y_padding = (global_max - global_min) * 0.1
     y_lim = (global_min - y_padding, global_max + y_padding)
     y_ticks = np.round(np.linspace(y_lim[0], y_lim[1], 3)).tolist()
@@ -419,10 +391,6 @@ def plot_shapelets_side_by_side(
     plt.close()
 
 
-# -----------------------------------------------------------------------------
-# 3) SHAPELET ACTIVATION MAPS (PER CLASS / STACKED / ALL)
-# -----------------------------------------------------------------------------
-
 def visualize_classwise_node_activations_per_channel(
     correct_graphs,
     correct_labels,
@@ -432,26 +400,19 @@ def visualize_classwise_node_activations_per_channel(
     ratio: float = 0.5,
 ) -> None:
     """
-    For each class, compute a balanced subset of correctly predicted graphs,
-    and visualize the average node-wise shapelet activations per channel.
-
-    Each shapelet is min-max normalized across nodes (per sample) prior to averaging.
-
-    Parameters
-    ----------
-    correct_graphs : list[Data]
-        Correctly classified graphs.
-    correct_labels : torch.Tensor | list[int]
-        Ground-truth labels aligned with correct_graphs.
-    shapelet_model : torch.nn.Module
-        Model exposing `forward(x)` or `forward_get_channelwise(x)`.
-        Assumes dual-channel outputs if using the combined `forward`.
-    plot_folder : str
-        Output directory for the saved figures.
-    use_mean : bool
-        If True, calls `forward_get_channelwise(x)`; else splits `forward(x)` into two halves.
-    ratio : float
-        Fraction of min per-class size to sample (0 < ratio <= 1).
+    Description:
+        Aggregates correctly predicted graphs per alloy class, normalizes the sliding-window shapelet matching distances to a uniform [0,1] range per trace, averages them across the balanced subset, and exports individual high-res channel activation heatmaps.
+    Purpose:
+        To evaluate how different temporal nodes activate specific learned shapelets in each alloy class.
+    Input Types:
+        - correct_graphs (list): List of correctly classified graphs.
+        - correct_labels (list or numpy.ndarray): Target class labels aligned with graphs.
+        - shapelet_model (torch.nn.Module): Extracting module object.
+        - plot_folder (str): Directory where PNG plots are saved.
+        - use_mean (bool): Toggle average or direct distance extraction. Default is False.
+        - ratio (float): Sub-sampling balancing ratio. Default is 0.5.
+    Output Types:
+        - None: Saves plots directly.
     """
     os.makedirs(plot_folder, exist_ok=True)
     font_size = 16
@@ -556,26 +517,19 @@ def visualize_classwise_node_activations_stacked(
     ratio: float = 0.5,
 ) -> None:
     """
-    Stacked 5×2 grid of average node-wise shapelet activations per class.
-
-    For each class row: left = AE heatmap, right = Back-reflection heatmap.
-    Each shapelet activation is min-max normalized across nodes (per sample),
-    then averaged across the balanced subset.
-
-    Parameters
-    ----------
-    correct_graphs : list[Data]
-        Correctly classified graphs.
-    correct_labels : torch.Tensor | list[int]
-        Ground-truth labels aligned with correct_graphs.
-    shapelet_model : torch.nn.Module
-        Shapelet model with `forward` or `forward_get_channelwise`.
-    plot_folder : str
-        Directory to save the stacked figure.
-    use_mean : bool
-        If True, uses `forward_get_channelwise`; else splits `forward`.
-    ratio : float
-        Fraction of min per-class size to sample.
+    Description:
+        Constructs a comprehensive stacked grid of shapelet activation heatmaps across all 5 alloy composition classes (acoustic on left, optical on right). Row-normalizes activations and averages them across balanced sub-samples.
+    Purpose:
+        To save publication-ready, comparative shapelet activation profiles for the manuscript.
+    Input Types:
+        - correct_graphs (list): List of correctly classified graphs.
+        - correct_labels (list or numpy.ndarray): Target class labels.
+        - shapelet_model (torch.nn.Module): Extracting module object.
+        - plot_folder (str): Directory where stacked grid PNG is saved.
+        - use_mean (bool): Toggle average or direct distance extraction. Default is False.
+        - ratio (float): Sub-sampling balancing ratio. Default is 0.5.
+    Output Types:
+        - None: Saves the stacked grid PNG.
     """
     font_size = 16
     shapelet_model.eval()
@@ -677,7 +631,7 @@ def visualize_classwise_node_activations_stacked(
 
 def visualize_node_activations_from_multiple_graphs(
     correct_graphs,
-    correct_preds,   # noqa: ARG002 kept for signature parity; not used here
+    correct_preds,
     correct_labels,
     shapelet_model,
     plot_folder: str,
@@ -685,24 +639,20 @@ def visualize_node_activations_from_multiple_graphs(
     ratio: float = 0.5,
 ) -> None:
     """
-    Average normalized node-wise shapelet activations per channel across ALL classes.
-
-    Steps:
-    - Balanced sampling per class (ratio of min class size).
-    - Min-max normalize each shapelet across nodes (per sample).
-    - Truncate to smallest node count across samples; average across the pool.
-    - Plot AE and Back-reflection activation maps.
-
-    Parameters
-    ----------
-    correct_graphs : list[Data]
-    correct_preds : list[int]
-        Unused here (kept to match your original signature).
-    correct_labels : list[int] | torch.Tensor
-    shapelet_model : torch.nn.Module
-    plot_folder : str
-    use_mean : bool
-    ratio : float
+    Description:
+        Aggregates normalized temporal shapelet matching activations over all correctly classified graphs in the balanced pool (combining all classes) and displays overall sensory modality maps.
+    Purpose:
+        To capture overall, class-independent node-to-shapelet activation behaviors.
+    Input Types:
+        - correct_graphs (list): List of correctly classified graphs.
+        - correct_preds (list): Output predictions (parities).
+        - correct_labels (list or numpy.ndarray): Actual labels.
+        - shapelet_model (torch.nn.Module): Extracting module object.
+        - plot_folder (str): Directory where PNG is saved.
+        - use_mean (bool): Toggle average or direct distance extraction. Default is False.
+        - ratio (float): Sub-sampling balancing ratio. Default is 0.5.
+    Output Types:
+        - None: Saves the figure as a PNG to disk.
     """
     os.makedirs(plot_folder, exist_ok=True)
     shapelet_model.eval()
@@ -788,10 +738,6 @@ def visualize_node_activations_from_multiple_graphs(
     plt.close()
 
 
-# -----------------------------------------------------------------------------
-# 4) ATTENTION HEATMAPS
-# -----------------------------------------------------------------------------
-
 def plot_global_attention_heatmap(
     model,
     correct_graphs,
@@ -802,30 +748,20 @@ def plot_global_attention_heatmap(
     title: str = "Global GAT Attention",
 ):
     """
-    Aggregate attention across the 3 GAT layers and across multiple graphs,
-    then visualize a single global node-to-node attention heatmap.
-
-    Parameters
-    ----------
-    model : nn.Module
-        Must expose `shapelet_model` and three GAT layers as `gat1/gat2/gat3`.
-    correct_graphs : list[Data]
-        Graphs to summarize over.
-    device : torch.device
-        Inference device.
-    save_folder : str
-        Output directory for PNG.
-    normalize_rows : bool
-        If True, row-normalize attention and scale to [0,1].
-    top_k : int, optional
-        If provided, keep only top-k outgoing edges per row before normalization.
-    title : str
-        Title for the heatmap.
-
-    Returns
-    -------
-    torch.Tensor
-        The averaged attention matrix (possibly row-normalized and masked).
+    Description:
+        Aggregates GAT edge attention weights across all three attention layers and across all graphs in the evaluation set to visualize a single unified node-to-node global attention heatmap (diagonal self-loops cleared for clarity).
+    Purpose:
+        To extract and display global structural GAT attention maps.
+    Input Types:
+        - model (torch.nn.Module): Trained neural network model.
+        - correct_graphs (list): List of evaluation graphs.
+        - device (torch.device): Computational target device.
+        - save_folder (str): Folder where PNG plot is exported.
+        - normalize_rows (bool): Scale row vectors to [0,1] interval if True. Default is True.
+        - top_k (int, optional): Retain only top-k outgoing connections per row if set.
+        - title (str): Title of the plot. Default is "Global GAT Attention".
+    Output Types:
+        - A_avg (torch.Tensor): Calculated averaged attention matrix.
     """
     model.eval()
     os.makedirs(save_folder, exist_ok=True)
@@ -924,23 +860,19 @@ def plot_classwise_attention_maps(
     ratio: float = 0.02,
 ) -> None:
     """
-    Compute class-wise node-to-node attention maps (averaged over a balanced subset),
-    and draw a heatmap per class.
-
-    Parameters
-    ----------
-    model : nn.Module
-        Must expose `shapelet_model` and three GAT layers `gat1/gat2/gat3`.
-    correct_graphs : list[Data]
-        Correctly classified graphs.
-    correct_labels : list[int] | torch.Tensor
-        Corresponding labels aligned with `correct_graphs`.
-    device : torch.device
-        Inference device.
-    save_folder : str
-        Directory to save class-wise heatmaps.
-    ratio : float
-        Fraction of min per-class sample count to use (0 < ratio <= 1).
+    Description:
+        Partitions the evaluation graph list by target composition class, sub-samples balanced sets, calculates averaged GAT attention maps row-normalized to [0,1], and exports individual class heatmaps to disk.
+    Purpose:
+        To evaluate class-specific GAT edge attention structures.
+    Input Types:
+        - model (torch.nn.Module): Trained neural network model.
+        - correct_graphs (list): Sequence of correctly predicted graphs.
+        - correct_labels (list or numpy.ndarray): Sequence of actual class targets.
+        - device (torch.device): computational device target.
+        - save_folder (str): Folder where class PNG heatmaps are exported.
+        - ratio (float): Sampling ratio. Default is 0.02.
+    Output Types:
+        - None: Saves plots directly.
     """
     os.makedirs(save_folder, exist_ok=True)
     model.eval()
@@ -1024,16 +956,12 @@ def plot_classwise_attention_maps(
 
         plt.tight_layout()
         path = os.path.join(save_folder, f"class_{
-                            class_label}_attention_strength.png")
+                             class_label}_attention_strength.png")
         plt.savefig(path, dpi=350, bbox_inches='tight', facecolor='white')
         plt.show()
         plt.close()
         print(f"✅ Saved: {path}")
 
-
-# -----------------------------------------------------------------------------
-# 5) EMBEDDING VISUALIZATION
-# -----------------------------------------------------------------------------
 
 def visualize_embeddings_all_methods(
     model,
@@ -1044,30 +972,19 @@ def visualize_embeddings_all_methods(
     figsize: Tuple[float, float] = (10, 5),
 ) -> None:
     """
-    Visualize graph-level embeddings (from `model.forward_embedding`) with t-SNE.
-
-    Currently renders only the "Both Channels" mode and t-SNE reducer for simplicity,
-    matching your latest code state. It is easy to expand to PCA/UMAP or per-channel
-    masking by adding to `reduction_methods` and `modes`.
-
-    Parameters
-    ----------
-    model : nn.Module
-        Must expose `forward_embedding(x, edge_index, batch, mask_channel=None)`.
-    graph_list : list[Data]
-        Graphs to embed (e.g., test set).
-    device : torch.device
-        Inference device.
-    class_labels : dict[int, str], optional
-        Pretty names for classes (defaults to 316L-Cu mapping).
-    save_folder : str, optional
-        Directory to save figures (PNG).
-    figsize : tuple(float, float)
-        Matplotlib figure size.
-
-    Notes
-    -----
-    - Colors/markers are fixed per class for consistency across methods/modes.
+    Description:
+        Generates graph-level embedding representations by passing inputs to `model.forward_embedding`, reduces dimensions to 2D space using t-SNE (or UMAP/PCA if configured), and visualizes the clustered distribution of alloy compositions.
+    Purpose:
+        To assess clustering separation quality and confirm learning effectiveness.
+    Input Types:
+        - model (torch.nn.Module): Trained model exposing `forward_embedding` method.
+        - graph_list (list): Collection of graphs to embed.
+        - device (torch.device): computational device target.
+        - class_labels (dict, optional): Mapper dictionary of encoded targets to string compositions.
+        - save_folder (str, optional): Target output directory.
+        - figsize (tuple): Size of matplotlib canvas. Default is (10, 5).
+    Output Types:
+        - None: Saves embedding scatter plots to disk.
     """
     model = model.eval().to(device)
 

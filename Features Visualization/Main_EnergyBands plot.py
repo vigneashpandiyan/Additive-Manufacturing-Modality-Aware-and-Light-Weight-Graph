@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-@author: srpv
-contact: vigneashwara.solairajapandiyan@empa.ch, vigneashpandiyan@gmail.com
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This script is part of the publication:
-"Pyrometry-based in-situ Layer Thickness Identification via Vector-length Aware Self-Supervised Learning"
+Implementation Includes:
+- Loading pre-extracted FFT features and corresponding Cu-composition classes.
+- Normalizing spectral energy bands globally between 0 and 1.
+- Balancing the dataset and melting columns for seaborn-based frequency distribution bar plots.
+- Exporting high-resolution frequency band distribution figures for optical emissions.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 # %% Imports
@@ -90,6 +98,17 @@ df_melted = df_balanced.melt(
 
 
 def plot_frequency_distribution(data_melted, save_path):
+    """
+    Description:
+        Generates and saves a high-quality horizontal bar plot visualizing the normalized spectral energy distribution across different frequency bands for each material composition class.
+    Purpose:
+        To visualize the composition-sensitive signatures in the frequency domain for multi-material monitoring.
+    Input Types:
+        - data_melted (pandas.DataFrame): A long-format DataFrame containing 'Categorical' (composition class), 'Frequency Band', and 'Spectral Energy'.
+        - save_path (str): The folder path where the generated PNG figure will be saved.
+    Output Types:
+        - None: Saves the generated figure directly to disk and displays it.
+    """
     import matplotlib.pyplot as plt
     import seaborn as sns
     import os

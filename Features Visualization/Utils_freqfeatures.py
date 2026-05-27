@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-@author: vpsora
-contact: vigneashwara.solairajapandiyan@utu.fi,vigneashpandiyan@gmail.com
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-The codes in this following script will be used for the publication of the following work
-"Adaptive In-situ Monitoring for Laser Powder Bed Fusion:Self-Supervised Learning for Layer Thickness Monitoring Across Scan lengths based on Pyrometry"
+Implementation Includes:
+- Normalizing input signals into range [-1, 1].
+- Partitioning absolute frequency spectra into dynamic frequency bands.
+- Computing absolute delta power and relative power ratio features using Welch's/Periodogram methods.
 
-@any reuse of this code should be authorized by the code author
+Note: Any reuse of this code should be authorized by the code author.
 """
 # %%
 # Libraries to import
@@ -28,14 +33,14 @@ from scipy.stats import entropy
 
 def normalize_to_minus_one(array):
     """
-    Normalize an array to the range of -1 to 1.
-
-    Args:
-        array (numpy.ndarray): The input array to be normalized.
-
-    Returns:
-        numpy.ndarray: The normalized array.
-
+    Description:
+        Normalizes the elements of an input array to the range [-1, 1] using min-max scaling.
+    Purpose:
+        To scale signals/waveforms within a standard range to allow consistent comparison.
+    Input Types:
+        - array (numpy.ndarray or list): The input array to be normalized.
+    Output Types:
+        - normalized_array (numpy.ndarray): The normalized array scaled to [-1, 1].
     """
     min_val = np.min(array)
     max_val = np.max(array)
@@ -48,15 +53,15 @@ def normalize_to_minus_one(array):
 
 def get_band(band_size, band_max_size):
     """
-    Generates a list of values representing frequency bands.
-
-    Args:
-        band_size (int): The number of bands to generate.
-        band_max_size (float): The maximum size of the frequency band.
-
-    Returns:
-        list: A list of values representing the frequency bands.
-
+    Description:
+        Generates a sequence of frequency values dividing the range from 0 to band_max_size into band_size sub-bands.
+    Purpose:
+        To establish frequency boundary intervals for power spectral calculations.
+    Input Types:
+        - band_size (int): Number of sub-bands to generate.
+        - band_max_size (float or int): Upper boundary of the total frequency range.
+    Output Types:
+        - band (list): A list of starting frequencies for each sub-band.
     """
     band_window = 0
     band = []
@@ -70,19 +75,18 @@ def get_band(band_size, band_max_size):
 
 def spectrumpower(psd, band, freqs, band_size):
     """
-    Calculate the delta power and relative power for a given power spectral density (psd) using the specified frequency bands.
-
-    Args:
-        psd (array-like): The power spectral density.
-        band (array-like): The frequency bands.
-        freqs (array-like): The frequencies corresponding to the power spectral density.
-        band_size (int): The size of the frequency bands.
-
-    Returns:
-        tuple: A tuple containing two lists - Feature_deltapower and Feature_relativepower.
-            - Feature_deltapower (list): The delta power for each frequency band.
-            - Feature_relativepower (list): The relative power for each frequency band.
-
+    Description:
+        Computes the absolute delta power and relative power ratios for a signal across specified frequency bands.
+    Purpose:
+        To extract quantitative energy-based features from the power spectral density.
+    Input Types:
+        - psd (array-like): Power spectral density values of the signal.
+        - band (array-like): Frequencies representing sub-band boundaries.
+        - freqs (array-like): The frequencies corresponding to the PSD.
+        - band_size (int): Total number of sub-bands.
+    Output Types:
+        - Feature_deltapower (list): Absolute delta power for each band.
+        - Feature_relativepower (list): Relative power ratio for each band.
     """
     length = len(band)
     # print(length)
@@ -106,10 +110,18 @@ def spectrumpower(psd, band, freqs, band_size):
 
 
 def function_freq(val, sample_rate, band_size):
-
-    # This function calculates the frequency features of a given input signal.
-    # It takes three parameters: val (input signal), sample_rate (sampling rate of the signal), and band_size (number of frequency bands).
-    # It returns a list of feature vectors.
+    """
+    Description:
+        Computes power spectral density and calculates delta and relative power features for a single 1D signal sequence.
+    Purpose:
+        To serve as a core feature-extraction mapping from raw signal sequence to frequency domain feature vectors.
+    Input Types:
+        - val (array-like): 1D array representing raw temporal signal values.
+        - sample_rate (int): Signal sampling rate in Hz.
+        - band_size (int): Number of frequency bands.
+    Output Types:
+        - Feature_vectors (numpy.ndarray): Concatenated array of delta and relative power features.
+    """
 
     i = 0
     win = 4 * sample_rate
@@ -143,9 +155,18 @@ def function_freq(val, sample_rate, band_size):
 
 
 def Freqfunction(data_new, sample_rate, band_size):
-    # This function calculates the frequency features of a given input signal.
-    # It takes three parameters: data_new (input signal), sample_rate (sampling rate of the signal), and band_size (number of frequency bands).
-    # It returns a list of feature vectors.
+    """
+    Description:
+        Processes a collection of signals, extracting frequency features row by row or channel by channel.
+    Purpose:
+        To perform batch frequency feature extraction across all samples in the raw dataset.
+    Input Types:
+        - data_new (numpy.ndarray): Multi-dimensional signal matrix of shape [window_length, num_samples].
+        - sample_rate (int): Sampling rate of the raw signals in Hz.
+        - band_size (int): Number of frequency sub-bands to generate.
+    Output Types:
+        - featurelist (list): List of frequency feature vectors for all samples.
+    """
     columnsdata = data_new.transpose()
     columns = np.atleast_2d(columnsdata).shape[1]
     featurelist = []

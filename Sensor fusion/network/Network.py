@@ -1,36 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Network architectures for multimodal time series classification.
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module implements neural network components for processing dual-channel time series data
-using shapelet learning and graph attention mechanisms. The architecture consists of:
+Implementation Includes:
+- BatchedShapeletExtractor: A parallel learnable shapelet matching module mapping waveforms to structural nodes.
+- GNNWithAttention: Core Graph Attention Network (GAT) fusing optical/acoustic shapelet metrics via cross-channel attention.
 
-1. BatchedShapeletExtractor - Learns discriminative subsequence patterns from each channel
-2. GNNWithAttention - Graph neural network with attention for processing shapelet representations
-
-Key Features:
-- Joint learning of temporal patterns and graph relationships
-- Modality-specific shapelet extraction
-- Attention-based feature aggregation
-- End-to-end differentiable architecture
-
-Example Usage:
-    >>> # Initialize model
-    >>> model = GNNWithAttention(in_channels=None, 
-    ...                         hidden_channels=32,
-    ...                         out_channels=5,
-    ...                         shapelet_len=50,
-    ...                         num_shapelets=10)
-    >>> # Process sample data
-    >>> x = torch.randn(128, 2, 300)  # 128 nodes, 2 channels, 300 timesteps
-    >>> edge_index = torch.randint(0, 128, (2, 256))  # Random edges
-    >>> batch = torch.randint(0, 4, (128,))  # 4 graphs in batch
-    >>> output = model(x, edge_index, batch)  # Forward pass
-
-
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import torch
@@ -44,36 +24,19 @@ import numpy as np
 class BatchedShapeletExtractor(nn.Module):
     """
     Learns and extracts shapelet features from dual-channel time series data.
-
-    Shapelets are discriminative subsequences learned directly from the data.
-    For each input channel, the module:
-    1. Maintains a set of learnable shapelets
-    2. Computes minimum squared distances between shapelets and all subsequences
-    3. Returns concatenated features from both channels
-
-    Architecture:
-    - Separate shapelet sets for each input channel
-    - Distance-based feature extraction
-    - Preserves initial shapelets for analysis
-
-    Args:
-        shapelet_len (int): Length of each shapelet in timesteps
-        num_shapelets (int): Number of shapelets to learn per channel
-
-    Shape Notation:
-        B: Batch size
-        C: Number of channels (fixed at 2)
-        T: Time series length
-        K: Number of shapelets per channel
-        L: Shapelet length
-
-    Example:
-        >>> extractor = BatchedShapeletExtractor(shapelet_len=50, num_shapelets=8)
-        >>> x = torch.randn(16, 2, 300)  # batch of 16 samples
-        >>> features = extractor(x)  # output shape: [16, 16]
     """
-
     def __init__(self, shapelet_len, num_shapelets):
+        """
+        Description:
+            Initializes the shapelet matching layer with two sets of randomly initialized learnable parameters (one per sensor channel) and registers buffers storing initial state copies.
+        Purpose:
+            To configure model capacity and initialize shapelet filters for learning temporal patterns.
+        Input Types:
+            - shapelet_len (int): Length of each shapelet in timesteps.
+            - num_shapelets (int): Number of shapelets to learn per channel.
+        Output Types:
+            - None: Builds model layers.
+        """
         super().__init__()
         self.shapelet_len = shapelet_len
         self.num_shapelets = num_shapelets
@@ -92,19 +55,14 @@ class BatchedShapeletExtractor(nn.Module):
 
     def forward(self, x):
         """
-        Compute shapelet-based features via minimum distance matching.
-
-        Args:
-            x (torch.Tensor): Input tensor of shape [B, 2, T]
-
-        Returns:
-            torch.Tensor: Concatenated features of shape [B, 2*K]
-
-        Process:
-            1. Extract subsequences via sliding window
-            2. Compute squared distances to all shapelets
-            3. Take minimum distance per shapelet
-            4. Concatenate features from both channels
+        Description:
+            Splits the dual-channel signals and computes the minimum squared Euclidean distances between the sliding windows of input signals and all learnable shapelets for each channel. Concatenates outputs from both channels.
+        Purpose:
+            To execute differentiable, distance-based temporal feature extraction from multi-modal waveforms.
+        Input Types:
+            - x (torch.Tensor): Dual-channel sequence tensor of shape [B, 2, T].
+        Output Types:
+            - distances (torch.Tensor): Concatenated minimum distance features of shape [B, 2*K].
         """
         B, C, T = x.shape
         assert C == 2, "Input must have exactly 2 channels"
@@ -113,7 +71,6 @@ class BatchedShapeletExtractor(nn.Module):
         K, L = self.shapelets_ch1.shape
 
         def compute_min_dist(signal, shapelets):
-            """Helper function to compute minimum distances."""
             dists = []
             for i in range(T - L + 1):
                 subseq = signal[:, i:i + L]  # [B, L]
@@ -130,15 +87,16 @@ class BatchedShapeletExtractor(nn.Module):
 
     def forward_get_channelwise(self, x):
         """
-        Compute average distances per channel for analysis.
-
-        Args:
-            x (torch.Tensor): Input tensor of shape [B, 2, T]
-
-        Returns:
-            Tuple[torch.Tensor, torch.Tensor]:
-                - Average distances for channel 1 [B, K]
-                - Average distances for channel 2 [B, K]
+        Description:
+            Computes average squared Euclidean distances between sliding windows of the input signals and the learned shapelets.
+        Purpose:
+            To calculate average channel activation metrics for post-hoc interpretations.
+        Input Types:
+            - x (torch.Tensor): Dual-channel sequence tensor of shape [B, 2, T].
+        Output Types:
+            - tuple: (ch1_avg_dist, ch2_avg_dist)
+                - ch1_avg_dist (torch.Tensor): Average distances for channel 1 [B, K].
+                - ch2_avg_dist (torch.Tensor): Average distances for channel 2 [B, K].
         """
         B, C, T = x.shape
         assert C == 2, "Input must have exactly 2 channels"
@@ -147,7 +105,6 @@ class BatchedShapeletExtractor(nn.Module):
         K, L = self.shapelets_ch1.shape
 
         def compute_avg_dist(signal, shapelets):
-            """Helper function to compute average distances."""
             dists = []
             for i in range(T - L + 1):
                 subseq = signal[:, i:i + L]
@@ -161,21 +118,31 @@ class BatchedShapeletExtractor(nn.Module):
 
     def get_raw_shapelets_initial(self):
         """
-        Get initial shapelet values (before training).
-
-        Returns:
-            Tuple[torch.Tensor, torch.Tensor]:
-                Initial shapelets for channel 1 and 2, each of shape [K, L]
+        Description:
+            Retrieves the saved copies of shapelet parameters recorded during model initialization.
+        Purpose:
+            To support comparison of shapelet features before and after optimization.
+        Input Types:
+            - None
+        Output Types:
+            - tuple: (ch1_init, ch2_init)
+                - ch1_init (torch.Tensor): Initial shapelet weights for channel 1 [K, L].
+                - ch2_init (torch.Tensor): Initial shapelet weights for channel 2 [K, L].
         """
         return self.shapelets_ch1_init.detach().cpu(), self.shapelets_ch2_init.detach().cpu()
 
     def get_raw_shapelets_current(self):
         """
-        Get current learned shapelet values.
-
-        Returns:
-            Tuple[torch.Tensor, torch.Tensor]:
-                Current shapelets for channel 1 and 2, each of shape [K, L]
+        Description:
+            Retrieves the current optimized values of the learnable shapelet parameters.
+        Purpose:
+            To output current shapelet arrays for analysis and plotting.
+        Input Types:
+            - None
+        Output Types:
+            - tuple: (ch1_current, ch2_current)
+                - ch1_current (torch.Tensor): Current shapelet weights for channel 1 [K, L].
+                - ch2_current (torch.Tensor): Current shapelet weights for channel 2 [K, L].
         """
         return self.shapelets_ch1.detach().cpu(), self.shapelets_ch2.detach().cpu()
 
@@ -183,34 +150,23 @@ class BatchedShapeletExtractor(nn.Module):
 class GNNWithAttention(nn.Module):
     """
     Graph Attention Network with shapelet-based feature extraction.
-
-    Combines:
-    - Shapelet learning from time series data
-    - Multi-head graph attention layers
-    - Graph-level classification
-
-    Architecture:
-    1. Shapelet feature extraction
-    2. 3-layer GAT with batch normalization
-    3. Global mean pooling
-    4. MLP classifier
-
-    Args:
-        in_channels (int): Unused (for interface compatibility)
-        hidden_channels (int): Dimension of hidden layers
-        out_channels (int): Number of output classes
-        heads (int): Number of attention heads (default: 2)
-        shapelet_len (int): Length of shapelets (default: 50)
-        num_shapelets (int): Number of shapelets per channel (default: 10)
-
-    Shape Notation:
-        N: Number of nodes
-        E: Number of edges
-        G: Number of graphs
-        H: Hidden dimension
     """
-
     def __init__(self, in_channels, hidden_channels, out_channels, heads=2, shapelet_len=50, num_shapelets=10):
+        """
+        Description:
+            Initializes the hybrid GNN model: instantiates the `BatchedShapeletExtractor`, configures three successive GATConv layers with batch normalization, and sets up the final fully-connected MLP classification head.
+        Purpose:
+            To build the core end-to-end framework integrating local shapelet matching and global graph attention.
+        Input Types:
+            - in_channels (int): Unused parameter kept for interface compatibility.
+            - hidden_channels (int): Hidden dimensions size.
+            - out_channels (int): Number of target alloy compositions.
+            - heads (int): Number of attention heads for GAT blocks. Default is 2.
+            - shapelet_len (int): Length of each shapelet filter. Default is 50.
+            - num_shapelets (int): Shapelets per modality. Default is 10.
+        Output Types:
+            - None: Builds structure modules.
+        """
         super().__init__()
         self.shapelet_model = BatchedShapeletExtractor(
             shapelet_len, num_shapelets)
@@ -236,32 +192,34 @@ class GNNWithAttention(nn.Module):
 
     def forward(self, x, edge_index, batch, mask_channel=None):
         """
-        Forward pass for classification.
-
-        Args:
-            x (torch.Tensor): Node features [N, 2, T]
-            edge_index (torch.LongTensor): Edge indices [2, E]
-            batch (torch.LongTensor): Batch indices [N]
-            mask_channel (int, optional): Channel to mask (0 or 1)
-
-        Returns:
-            torch.Tensor: Class logits [G, out_channels]
+        Description:
+            Runs the full classification pipeline: extracts GAT embeddings from the input node sequences and maps them to alloy composition class logits.
+        Purpose:
+            To execute forward mapping from raw window node sequences to output predictions.
+        Input Types:
+            - x (torch.Tensor): Window nodes sequence tensor of shape [N, 2, T].
+            - edge_index (torch.Tensor): Connectivity adjacency matrix of shape [2, E].
+            - batch (torch.Tensor): Graph assignment index map of shape [N].
+            - mask_channel (int, optional): Modality channel index to mask out (0 or 1) for ablation testing.
+        Output Types:
+            - logits (torch.Tensor): Categorical predictions of shape [B, OutChannels].
         """
         embedding = self.forward_embedding(x, edge_index, batch, mask_channel)
         return self.classifier(embedding)
 
     def forward_embedding(self, x, edge_index, batch, mask_channel=None):
         """
-        Generate graph embeddings through shapelet extraction and GAT layers.
-
-        Args:
-            x (torch.Tensor): Node features [N, 2, T]
-            edge_index (torch.LongTensor): Edge indices [2, E]
-            batch (torch.LongTensor): Batch indices [N]
-            mask_channel (int, optional): Channel to mask (0 or 1)
-
-        Returns:
-            torch.Tensor: Graph embeddings [G, hidden_channels]
+        Description:
+            Generates graph representations by extracting shapelet features (optionally masking one modality), passing them through stacked multi-head GATConv layers with ELU activations and batch normalizations, and performing global mean pooling across node states.
+        Purpose:
+            To map node sequences to unified, explainable graph embeddings.
+        Input Types:
+            - x (torch.Tensor): Window nodes sequence tensor of shape [N, 2, T].
+            - edge_index (torch.Tensor): Connectivity adjacency matrix of shape [2, E].
+            - batch (torch.Tensor): Graph assignment index map of shape [N].
+            - mask_channel (int, optional): Modality channel index to mask out (0 or 1) for ablation testing.
+        Output Types:
+            - graph_embeddings (torch.Tensor): Fused graph representations of shape [B, HiddenChannels].
         """
         if mask_channel is not None:
             x = x.clone()
@@ -287,9 +245,27 @@ class GNNWithAttention(nn.Module):
         return global_mean_pool(x, batch)
 
     def get_shapelets_initial(self):
-        """Get initial shapelet values."""
+        """
+        Description:
+            Retrieves initial shapelets parameters.
+        Purpose:
+            Helper mapping to support shapelet analysis.
+        Input Types:
+            - None
+        Output Types:
+            - tuple: Initial shapelets for channel 1 and 2.
+        """
         return self.shapelet_model.get_raw_shapelets_initial()
 
     def get_shapelets_current(self):
-        """Get current learned shapelet values."""
+        """
+        Description:
+            Retrieves optimized shapelets parameters.
+        Purpose:
+            Helper mapping to support shapelet analysis.
+        Input Types:
+            - None
+        Output Types:
+            - tuple: Current shapelets for channel 1 and 2.
+        """
         return self.shapelet_model.get_raw_shapelets_current()

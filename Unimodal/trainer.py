@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jul 29 12:01:31 2025
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-@author: vpsora
+Implementation Includes:
+- `BatchedShapeletExtractor`: A parallel learnable shapelet matching module mapping waveforms to structural nodes.
+- `GNNWithAttention`: Graph neural network with GATConv and classification MLP adapted for unimodal input data.
 
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
-
+Note: Any reuse of this code should be authorized by the code author.
 """
 import torch
 import torch.nn as nn
@@ -37,6 +39,18 @@ class BatchedShapeletExtractor(nn.Module):
     """
 
     def __init__(self, shapelet_len, num_shapelets):
+        """
+        Description:
+            Initializes the BatchedShapeletExtractor module, instantiating learnable shapelets
+            and registering a buffer to keep a copy of their initial state.
+        Purpose:
+            To configure shapelet lengths and counts, and preserve an initial baseline reference.
+        Input Types:
+            - shapelet_len (int): Length of each shapelet.
+            - num_shapelets (int): Number of shapelets to learn.
+        Output Types:
+            - None
+        """
         super().__init__()
         self.shapelet_len = shapelet_len
         self.num_shapelets = num_shapelets
@@ -49,20 +63,14 @@ class BatchedShapeletExtractor(nn.Module):
 
     def forward(self, x):
         """
-        Computes minimum distance-based shapelet features.
-
-        Parameters:
-        -----------
-        x : torch.Tensor
-            Input tensor of shape (B, 1, T), where:
-            - B is batch size
-            - 1 is the channel count
-            - T is time series length
-
-        Returns:
-        --------
-        torch.Tensor
-            Distance features of shape (B, K), where K is num_shapelets.
+        Description:
+            Computes the minimum distance-based shapelet feature values over the input time series.
+        Purpose:
+            To extract shapelet matching distance signatures from multi-window time series.
+        Input Types:
+            - x (torch.Tensor): Input tensor of shape (B, 1, T) representing batch size, channel count, and temporal length.
+        Output Types:
+            - min_dists (torch.Tensor): Computed distance features of shape (B, K), where K is the number of shapelets.
         """
         B, C, T = x.shape
         assert C == 1, "Expected single-channel input (C=1)"
@@ -85,18 +93,14 @@ class BatchedShapeletExtractor(nn.Module):
 
     def forward_get_detailed(self, x):
         """
-        Computes average distances between shapelets and each window.
-        Useful for interpretability or saliency.
-
-        Parameters:
-        -----------
-        x : torch.Tensor
-            Input tensor of shape (B, 1, T)
-
-        Returns:
-        --------
-        torch.Tensor
-            Average distances for each shapelet: shape (B, K)
+        Description:
+            Computes average distance scores between shapelets and all sliding windows.
+        Purpose:
+            To provide detailed sequence activation/matching scores for explainability and feature visualization.
+        Input Types:
+            - x (torch.Tensor): Input signal tensor of shape (B, 1, T).
+        Output Types:
+            - avg_dists (torch.Tensor): Averaged shapelet distance features of shape (B, K).
         """
         B, C, T = x.shape
         assert C == 1, "Expected single-channel input (C=1)"
@@ -119,33 +123,40 @@ class BatchedShapeletExtractor(nn.Module):
 
     def get_raw_shapelets_initial(self):
         """
-        Returns the initial (untrained) shapelets.
-
-        Returns:
-        --------
-        torch.Tensor of shape (K, L)
+        Description:
+            Retrieves a copy of the initial, untrained shapelet weights stored in the registered buffer.
+        Purpose:
+            To provide a comparative baseline to visualize how shapelets evolve during model training.
+        Input Types:
+            - None
+        Output Types:
+            - initial_shapelets (torch.Tensor): Initial shapelet weights of shape (K, L).
         """
         return self.shapelets_init.detach().cpu()
 
     def get_raw_shapelets_current(self):
         """
-        Returns the current (trained) shapelets.
-
-        Returns:
-        --------
-        torch.Tensor of shape (K, L)
+        Description:
+            Retrieves the current, trained shapelet weights.
+        Purpose:
+            To visualize the final learned shapelets representing key temporal signatures.
+        Input Types:
+            - None
+        Output Types:
+            - current_shapelets (torch.Tensor): Current shapelet weights of shape (K, L).
         """
         return self.shapelets.detach().cpu()
 
     def forward_get_channelwise(self, x):
         """
-        Compute average shapelet distances separately for each channel.
-
-        Args:
-            x: Tensor of shape [B, 2, T]
-
-        Returns:
-            Tuple: (dist_ch1, dist_ch2), each of shape [B, num_shapelets]
+        Description:
+            Computes average shapelet distances separately for the first channel of the input.
+        Purpose:
+            To provide single-channel shapelet match profiles from multi-channel input structures.
+        Input Types:
+            - x (torch.Tensor): Input tensor of shape (B, 2, T).
+        Output Types:
+            - dist_ch1 (torch.Tensor): Channel-wise averaged shapelet distances of shape (B, K).
         """
         B, C, T = x.shape
 
@@ -197,6 +208,22 @@ class GNNWithAttention(nn.Module):
     """
 
     def __init__(self, in_channels, hidden_channels, out_channels, heads=2, shapelet_len=50, num_shapelets=10):
+        """
+        Description:
+            Initializes the GNNWithAttention model with a BatchedShapeletExtractor, 
+            three GATConv graph attention layers, BatchNorm layers, and a classification MLP.
+        Purpose:
+            To build the full single-channel graph neural network architecture using dynamic shapelet extraction.
+        Input Types:
+            - in_channels (int): Interface parameter, not directly used in extraction.
+            - hidden_channels (int): Number of hidden channels in GAT Conv layers.
+            - out_channels (int): Number of target classification classes.
+            - heads (int): Number of attention heads for multi-head GAT (default: 2).
+            - shapelet_len (int): Subsequence time-series length of learned shapelets (default: 50).
+            - num_shapelets (int): Number of shapelets learned per channel (default: 10).
+        Output Types:
+            - None
+        """
         super().__init__()
         self.shapelet_model = BatchedShapeletExtractor(
             shapelet_len, num_shapelets)
@@ -221,33 +248,33 @@ class GNNWithAttention(nn.Module):
 
     def forward(self, x, edge_index, batch):
         """
-        Forward pass for classification.
-
-        Parameters:
-        -----------
-        x : torch.Tensor
-            Input tensor of shape (num_nodes, 1, T)
-        edge_index : torch.LongTensor
-            Edge list (2, E)
-        batch : torch.LongTensor
-            Batch vector mapping nodes to graphs
-
-        Returns:
-        --------
-        torch.Tensor
-            Class logits of shape (num_graphs, out_channels)
+        Description:
+            Runs the full forward inference pass of the unimodal GNN model on input graphs.
+        Purpose:
+            To map a batch of graphs to class probability logits.
+        Input Types:
+            - x (torch.Tensor): Node features tensor of shape (num_nodes, 1, T).
+            - edge_index (torch.LongTensor): Graph edge connectivity index of shape (2, E).
+            - batch (torch.LongTensor): Mapping vector of shape (num_nodes,) assigning nodes to graphs.
+        Output Types:
+            - logits (torch.Tensor): Classification logits of shape (num_graphs, out_channels).
         """
         embedding = self.forward_embedding(x, edge_index, batch)
         return self.classifier(embedding)
 
     def forward_embedding(self, x, edge_index, batch):
         """
-        Forward pass through shapelet extractor and GNN.
-
-        Returns:
-        --------
-        torch.Tensor
-            Graph-level embedding after GNN and pooling.
+        Description:
+            Runs a forward pass through the shapelet extractor and GAT attention conv blocks
+            to compute global pooled graph embeddings.
+        Purpose:
+            To extract high-level representative graph embeddings for downstream classification.
+        Input Types:
+            - x (torch.Tensor): Raw temporal node feature tensor of shape (num_nodes, 1, T).
+            - edge_index (torch.LongTensor): Graph edge connections of shape (2, E).
+            - batch (torch.LongTensor): Node-to-graph grouping vector.
+        Output Types:
+            - embeddings (torch.Tensor): Global graph representation tensor of shape (num_graphs, hidden_channels).
         """
         # print(f"[Input] x shape: {x.shape}")  # [num_nodes, 1, T]
 
@@ -277,18 +304,26 @@ class GNNWithAttention(nn.Module):
 
     def get_shapelets_initial(self):
         """
-        Returns:
-        --------
-        torch.Tensor
-            Initial (untrained) shapelets of shape (K, L)
+        Description:
+            Retrieves the initial (untrained) shapelet weights from the extractor sub-module.
+        Purpose:
+            To provide the initial reference shapelet weights for comparative visualization.
+        Input Types:
+            - None
+        Output Types:
+            - initial_shapelets (torch.Tensor): Initial shapelet weights of shape (K, L).
         """
         return self.shapelet_model.get_raw_shapelets_initial()
 
     def get_shapelets_current(self):
         """
-        Returns:
-        --------
-        torch.Tensor
-            Current (learned) shapelets of shape (K, L)
+        Description:
+            Retrieves the currently learned shapelet weights from the extractor sub-module.
+        Purpose:
+            To provide the trained shapelet weights for visual inspections.
+        Input Types:
+            - None
+        Output Types:
+            - current_shapelets (torch.Tensor): Current shapelet weights of shape (K, L).
         """
         return self.shapelet_model.get_raw_shapelets_current()

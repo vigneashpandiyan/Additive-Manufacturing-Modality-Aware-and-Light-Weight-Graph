@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-DL execution, complexity, and resource tracking helpers.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Computing parameter count, FLOPs estimates, peak memory footprints, and latency profiles.
+- Training and evaluation execution loops for deep learning benchmarking.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import time
@@ -14,7 +24,14 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 def get_peak_memory():
     """
-    Get peak memory footprint (GPU allocated memory or CPU RSS memory in MB).
+    Description:
+        Retrieves the maximum memory footprint occupied during execution. On CUDA machines, it queries GPU memory stats; otherwise, it queries system RAM RSS memory.
+    Purpose:
+        To profile peak hardware memory resource consumption.
+    Input Types:
+        - None
+    Output Types:
+        - peak_memory (float): Memory footprint in Megabytes (MB).
     """
     if torch.cuda.is_available():
         return torch.cuda.max_memory_allocated() / (1024 * 1024)  # Convert to MB
@@ -25,7 +42,14 @@ def get_peak_memory():
 
 def reset_memory_tracker():
     """
-    Reset memory tracking.
+    Description:
+        Clears cached GPU memory and resets the PyTorch maximum memory allocation statistics. Runs garbage collection.
+    Purpose:
+        To clear past allocation buffers before beginning a new model profiling run to avoid leaks/stale figures.
+    Input Types:
+        - None
+    Output Types:
+        - None
     """
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
@@ -34,14 +58,30 @@ def reset_memory_tracker():
 
 def get_parameter_count(model):
     """
-    Count the total number of trainable parameters in a PyTorch model.
+    Description:
+        Iterates over the parameters of a model to calculate the total number of trainable parameter values.
+    Purpose:
+        To profile trainable parameter footprint of deep learning networks.
+    Input Types:
+        - model (torch.nn.Module): The target model to profile.
+    Output Types:
+        - param_count (int): Sum total of trainable scalar parameters.
     """
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def estimate_flops(model, model_type, device):
     """
-    Estimate FLOPs using the thop library.
+    Description:
+        Profiles the model by passing a simulated input batch matching the input shapes and uses the `thop` library to estimate total Floating Point Operations.
+    Purpose:
+        To estimate analytical runtime complexity (FLOPs) of DL architectures.
+    Input Types:
+        - model (torch.nn.Module): The network model.
+        - model_type (str): The class format ('graph' or 'sequence').
+        - device (torch.device): Computation target device.
+    Output Types:
+        - flops (int or str): Estimated total FLOPs count, or 'N/A' if an error occurs or `thop` is missing.
     """
     model.eval()
     try:
@@ -70,12 +110,25 @@ def estimate_flops(model, model_type, device):
 
 def train_and_eval_dl(model, model_type, train_loader, val_loader, test_loader, device, epochs, lr=0.005):
     """
-    Trains and evaluates a deep learning model (sequence or graph).
-    Returns:
-        metrics: dict of test scores
-        train_time: total training time
-        infer_time: avg inference time per sample in ms
-        peak_mem: peak memory in MB
+    Description:
+        Drives the standard deep learning pipeline. Iterates over specified epochs for sequence or graph training, calculates validation scores per epoch, tests the final trained model on test data, and tracks training speed, inference latency, and peak memory.
+    Purpose:
+        To train and score benchmarking architectures uniformly.
+    Input Types:
+        - model (torch.nn.Module): The network model to train.
+        - model_type (str): Model category ('graph' or 'sequence').
+        - train_loader (DataLoader): Training subset loader.
+        - val_loader (DataLoader): Validation subset loader.
+        - test_loader (DataLoader): Testing subset loader.
+        - device (torch.device): target computational device.
+        - epochs (int): Total epochs count.
+        - lr (float): Learning rate float coefficient. Default is 0.005.
+    Output Types:
+        - tuple: (metrics, train_time, infer_time_per_sample_ms, peak_mem)
+            - metrics (dict): Collection of accuracy, precision, recall, f1, roc-auc, lists of histories, and label outputs.
+            - train_time (float): Training elapsed seconds.
+            - infer_time_per_sample_ms (float): Inference latency in milliseconds per test sample.
+            - peak_mem (float): Maximum memory footprint in Megabytes (MB).
     """
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()

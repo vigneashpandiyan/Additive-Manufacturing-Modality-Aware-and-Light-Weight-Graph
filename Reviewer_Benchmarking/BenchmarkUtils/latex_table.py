@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-LaTeX table generation utility for formatting benchmark comparisons.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Formatting accuracy, parameter counts, memory, and statistical p-values into clean LaTeX tables ready for the manuscript.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os
@@ -9,8 +18,16 @@ import numpy as np
 
 def generate_latex_table(aggregated_df, p_values_dict, save_folder):
     """
-    Compile a high-quality, publication-ready LaTeX table comparing all models.
-    Marks the best scores in bold and denotes statistical significance.
+    Description:
+        Formats accuracy, precision, recall, f1, roc-auc, parameters, and paired statistical significance p-value markers across all evaluated architectures into a publication-ready LaTeX tabular format. Emphasizes best performing indices using LaTeX bold tags.
+    Purpose:
+        To auto-generate the central performance baseline comparison LaTeX block directly for direct manuscript inclusion.
+    Input Types:
+        - aggregated_df (pandas.DataFrame): Aggregated performance and resource metrics of the benchmarked models.
+        - p_values_dict (dict): Dictionary mapping model names to calculated significance test p-values.
+        - save_folder (str): Directory where the compiled LaTeX table code (.tex) is saved.
+    Output Types:
+        - latex_code (str): Entire generated LaTeX string code.
     """
     os.makedirs(save_folder, exist_ok=True)
     

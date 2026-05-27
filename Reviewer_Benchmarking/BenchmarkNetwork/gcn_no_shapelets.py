@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-GCN without shapelets baseline model architecture.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- A Graph Convolutional Network (GCN) baseline utilizing structural adjacency without shapelet extractions.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import torch
@@ -15,6 +24,18 @@ class GCNWithoutShapelets(nn.Module):
     them with a Linear layer, using Graph Convolutional Networks (GCN) instead of GAT.
     """
     def __init__(self, window_size=500, hidden_channels=16, out_channels=5):
+        """
+        Description:
+            Initializes structural layers of the baseline GCN (GCNWithoutShapelets) model including sequential GCNConv blocks, layer normalization, and classification modules.
+        Purpose:
+            To build a standard graph convolution architecture baseline that lacks multi-head attention and shapelet matches.
+        Input Types:
+            - window_size (int): Size of the temporal window segment. Default is 500.
+            - hidden_channels (int): Hidden dimensions size. Default is 16.
+            - out_channels (int): Output category count. Default is 5.
+        Output Types:
+            - None: Builds structural components.
+        """
         super().__init__()
         self.projector = nn.Sequential(
             nn.Linear(2 * window_size, 20),
@@ -40,6 +61,18 @@ class GCNWithoutShapelets(nn.Module):
         )
 
     def forward(self, x, edge_index, batch):
+        """
+        Description:
+            Flashes and flattens node segments, projects them, runs successive graph convolutional layers with batch normalizations and ELU activations, pools via global average operator, and passes output through classification linear layers.
+        Purpose:
+            To execute forward computation for a baseline GCN model using structural adjacency.
+        Input Types:
+            - x (torch.Tensor): Window nodes sequence tensor of shape [N, 2, WindowSize].
+            - edge_index (torch.Tensor): Connectivity adjacency matrix of shape [2, E].
+            - batch (torch.Tensor): Graph assignment index map of shape [N].
+        Output Types:
+            - logits (torch.Tensor): Classification logits of shape [B, OutChannels].
+        """
         # x shape: [N, 2, window_size]
         N, C, W = x.shape
         x = x.view(N, C * W)

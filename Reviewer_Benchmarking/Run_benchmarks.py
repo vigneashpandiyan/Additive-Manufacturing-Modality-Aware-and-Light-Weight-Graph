@@ -1,9 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Main benchmarking script for evaluating the Proposed Shapelet-GAT against 7 baselines.
-Exposes all configuration parameters, flags, and hyperparameters clearly at the top.
-Organizes all figures and resource summaries into model-specific subfolders in Figures/.
-Generates comparative cumulative learning curves and master logs under Figures/Comparison/.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Setting up comparative benchmarking suites across diverse deep learning architectures (CNN 1D, CNN-LSTM, TCN, Transformers, and non-shapelet GNNs).
+- Executing repeated training runs to collect latency, peak memory, parameter count, FLOPs, and accuracy statistics.
+- Generating LaTeX summary tables and exporting statistical comparison files for review.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os
@@ -91,8 +99,15 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 def print_pretty_complexity_table(df_agg, comp_dir):
     """
-    Generate a highly professional, double-ruled unicode ASCII table comparing model complexity
-    and sizes, printing it to stdout and saving it to Figures/Comparison/master_complexity_table.txt.
+    Description:
+        Generates a professionally formatted, double-ruled Unicode ASCII table comparing model parameters, file footprint sizes, and relative complexity classes. Prints it to stdout and saves it as a text file.
+    Purpose:
+        To present structured model resource profiles to researchers and reviewers clearly.
+    Input Types:
+        - df_agg (pandas.DataFrame): Aggregated performance and resource metrics of the benchmarked models.
+        - comp_dir (str): Folder path where the text table file is saved.
+    Output Types:
+        - None: Directly writes to terminal and disk.
     """
     lines = []
     lines.append("╔" + "═" * 24 + "╦" + "═" * 21 + "╦" + "═" * 22 + "╦" + "═" * 23 + "╗")
@@ -137,8 +152,16 @@ def print_pretty_complexity_table(df_agg, comp_dir):
 
 def create_detailed_comparison_csv(df_agg, toggles, comp_dir):
     """
-    Generate a detailed CSV comparing complexity, parameters, and performance of the active models
-    in the current training cycle. Saves to Figures/Comparison/model_complexity_performance_comparison.csv.
+    Description:
+        Creates a detailed comma-separated value (CSV) log mapping models to their parameter sizes, loss functions, input structures, validation training speeds, and estimated FLOP metrics.
+    Purpose:
+        To store raw profiling data for systematic visualization and external plotting.
+    Input Types:
+        - df_agg (pandas.DataFrame): Aggregated performance and complexity metrics.
+        - toggles (dict): Model enable/disable boolean flags dictionary.
+        - comp_dir (str): Folder path where the final CSV file is saved.
+    Output Types:
+        - None: Writes the CSV file to disk.
     """
     comparison_rows = []
     
@@ -199,6 +222,16 @@ def create_detailed_comparison_csv(df_agg, toggles, comp_dir):
 
 
 def main():
+    """
+    Description:
+        The main execution function driving the reviewer benchmarking pipeline. Parses command line arguments, handles multi-seed sequence and graph splits, runs cross-model training, and generates overall comparative figures.
+    Purpose:
+        To run standard comparative benchmarking experiments deterministically to evaluate the performance improvement of the proposed Shapelet-GAT.
+    Input Types:
+        - None: Parses CLI arguments from `sys.argv` internally.
+    Output Types:
+        - None: Saves figures, logs, matrices, and LaTeX tables directly.
+    """
     parser = argparse.ArgumentParser(description="Reviewer Benchmarking Pipeline")
     parser.add_argument("--debug", action="store_true", help="Run a quick debug dry-run (1 epoch, 200 samples)")
     args = parser.parse_args()

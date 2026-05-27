@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Handcrafted feature extraction for the Random Forest baseline.
-Computes time-domain and frequency-domain features from OE and AE signals.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Feature engineering helpers for time-series baselines, including statistical moments and domain transformations.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import numpy as np
@@ -13,7 +21,14 @@ import multiprocessing as mp
 
 def extract_channel_features(x):
     """
-    Extract 22 statistical and physical features from a single-channel 1D signal.
+    Description:
+        Extracts 22 hand-crafted statistical and spectral features (12 time-domain, 10 frequency-domain) from a single 1D signal.
+    Purpose:
+        To form tabular feature inputs for baseline machine learning models like Random Forest.
+    Input Types:
+        - x (numpy.ndarray): 1D array of single-channel sensor values.
+    Output Types:
+        - features (numpy.ndarray): 1D array containing all 22 extracted features.
     """
     features = []
     
@@ -84,7 +99,14 @@ def extract_channel_features(x):
 
 def extract_sample_features(sample):
     """
-    Extract concatenated features from both channels of a single sample [2, T].
+    Description:
+        Extracts and concatenates tabular feature vectors from both sensor channels for a single sample.
+    Purpose:
+        To form a unified dual-channel feature vector representing the multi-modal input at a given timestep.
+    Input Types:
+        - sample (numpy.ndarray): 2D array of shape [2, T] containing channel 1 and channel 2 signals.
+    Output Types:
+        - concatenated_features (numpy.ndarray): 1D array of shape [44] with features from both channels.
     """
     ch1_feats = extract_channel_features(sample[0])
     ch2_feats = extract_channel_features(sample[1])
@@ -93,7 +115,15 @@ def extract_sample_features(sample):
 
 def extract_all_features(X_data, use_multiprocessing=True):
     """
-    Extract features for all samples in X_data (shape: [B, 2, T]).
+    Description:
+        Extracts tabular features for all samples in a batch. Supports parallel CPU processing via multiprocessing pool.
+    Purpose:
+        To perform fast batch feature engineering across the entire training/testing datasets for ML evaluation.
+    Input Types:
+        - X_data (numpy.ndarray): Sequence dataset array of shape [B, 2, T].
+        - use_multiprocessing (bool): Enable or disable parallel pool execution. Default is True.
+    Output Types:
+        - feature_matrix (numpy.ndarray): 2D feature matrix of shape [B, 44].
     """
     print(f"[FEATURES] Extracting handcrafted features for {len(X_data)} samples...")
     

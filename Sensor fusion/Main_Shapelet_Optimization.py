@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Shapelet Number Optimization Sweep for Multimodal GAT.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Network for In-Situ Composition Monitoring
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
+Implementation Includes:
+- Optimizing shapelet parameters (number of shapelets, shapelet lengths) iteratively.
+- Tracking parameter sizes and classification accuracies to identify the most lightweight config.
 
-This script performs a systematic sweep over a range of shapelet counts: [2, 4, 6, 8, 10, 12, 14, 16].
-For each shapelet count, the script:
-1. Standardizes raw data and builds sliding-window graph representations.
-2. Initializes the GNNWithAttention model.
-3. Counts trainable parameters and estimates computational complexity (FLOPs).
-4. Trains the model and tracks validation accuracy to save the best checkpoint.
-5. Computes final test set metrics (Accuracy, Macro F1-score).
-6. Measures training time per epoch and average inference latency per sample.
-7. Generates a publication-ready 4-panel visual report saved in the Figures folder.
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os
@@ -22,7 +18,6 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import sys
 import gc
 import time
-import argparse
 import numpy as np
 import pandas as pd
 import torch
@@ -42,7 +37,7 @@ parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from Config import SEED, data_folder, plot_folder, batch_size, test_size, shapelet_len
+from Config import SEED, data_folder, plot_folder, num_epochs, batch_size, test_size, val_size, shapelet_len
 # Override plot_folder specifically for shapelet optimization outputs
 plot_folder = os.path.join(parent_dir, 'Sensor fusion', 'Figures', 'Shaplet_Optimization')
 
@@ -58,28 +53,19 @@ except ImportError:
     THOP_AVAILABLE = False
 
 
-def parse_args():
-    import argparse
-    parser = argparse.ArgumentParser(description="Shapelet Count Optimization Sweep")
-    parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs per run (default: 30)")
-    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for DataLoader (default: 256)")
-    parser.add_argument("--lr", type=float, default=0.005, help="Learning rate for Adam optimizer (default: 0.005)")
-    parser.add_argument("--debug", action="store_true", help="Quick debug mode (1 epoch, slices dataset to 200 samples)")
-    parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"], help="Preferred device (default: cuda)")
-    return parser.parse_args()
-
-
 def estimate_flops_analytical(num_shapelets, shapelet_len=50, num_nodes=19, window_size=500):
     """
-    Compute theoretical shapelet-matching operations analytically.
-    
-    Operations details:
-    - Sliding windows = T - L + 1  (T=window_size, L=shapelet_len)
-    - Subtraction, squaring, and summing take: 3 * L - 1 operations per window.
-    - Since we have 2 sensor channels and 2 independent shapelet sets:
-      FLOPs_extraction = 2 * num_nodes * num_shapelets * (T - L + 1) * (3 * L - 1)
-    - Plus minor linear projections inside multi-head GAT Conv layers:
-      FLOPs_projections = num_nodes * (num_shapelets * 2 * 16 * 2 + 16 * 2 * 16 * 2 + 16 * 2 * 16 * 1)
+    Description:
+        Analytically estimates total model FLOPs count based on shapelet matches and GAT layer dimensions.
+    Purpose:
+        To calculate FLOP count mathematically for complexity sweeps.
+    Input Types:
+        - num_shapelets (int): Number of shapelets per channel.
+        - shapelet_len (int): Length of each shapelet. Default is 50.
+        - num_nodes (int): Number of nodes in the graph. Default is 19.
+        - window_size (int): Temporal window width. Default is 500.
+    Output Types:
+        - estimated_flops (int): Sum analytical FLOPs count.
     """
     L = shapelet_len
     T = window_size
@@ -90,9 +76,16 @@ def estimate_flops_analytical(num_shapelets, shapelet_len=50, num_nodes=19, wind
 
 def get_flops_profile(num_shapelets, num_classes, device):
     """
-    Estimate GNN model computational footprint in FLOPs using a dummy model.
-    Combines thop library profiling for GAT/downstream layers with exact analytical
-    formula for custom shapelet extraction (which thop cannot profile inside python loops).
+    Description:
+        Profiles the GNN model using the `thop` library combined with analytical shapelet match calculation.
+    Purpose:
+        To provide complete FLOP profiles representing both the shapelet matching layer and structural attention layers.
+    Input Types:
+        - num_shapelets (int): Number of shapelets per channel.
+        - num_classes (int): Total output composition classes.
+        - device (torch.device): Computation device.
+    Output Types:
+        - total_flops (int): Total FLOP complexity.
     """
     num_nodes = 19
     # Compute the analytical shapelet matching FLOPs
@@ -134,10 +127,31 @@ def get_flops_profile(num_shapelets, num_classes, device):
         return estimate_flops_analytical(num_shapelets)
 
 
-def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loader, test_loader, device, epochs, lr):
+def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loader, test_loader, device):
     """
-    Trains a model and returns its test metrics, parameter counts, FLOPs, and latency.
+    Description:
+        Initializes a GNN model with the specified shapelet count, trains it across all epochs, records validation loss trends to save the best checkpoint, and measures test accuracy, Macro F1, training speed, and sample inference latency.
+    Purpose:
+        To serve as the core evaluation unit within the parameter optimization sweep.
+    Input Types:
+        - num_shapelets (int): Number of shapelets to evaluate.
+        - num_classes (int): Number of alloy classes.
+        - train_loader (DataLoader): Training loader.
+        - val_loader (DataLoader): Validation loader.
+        - test_loader (DataLoader): Test loader.
+        - device (torch.device): target computational device.
+    Output Types:
+        - metrics (dict): Dictionary of accuracy, f1_score, parameters, flops, epoch time, and inference latency.
     """
+    # Reset random seeds to ensure identical weight initialization and shuffling order as Main.py
+    torch.manual_seed(SEED)
+    np.random.seed(SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    set_gpu_seed(SEED)
+    gc.collect()
+    torch.cuda.empty_cache()
+
     # Initialize GNN Model
     model = GNNWithAttention(
         in_channels=num_shapelets * 2,
@@ -151,8 +165,8 @@ def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loade
     params_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
     flops_count = get_flops_profile(num_shapelets, num_classes, device)
 
-    # Optimization config
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # Optimization config - same learning rate and criterion as Main.py
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
     criterion = nn.CrossEntropyLoss()
 
     best_val_acc = -1.0
@@ -162,7 +176,7 @@ def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loade
     start_train_time = time.time()
     epoch_times = []
     
-    for epoch in range(1, epochs + 1):
+    for epoch in range(1, num_epochs + 1):
         epoch_start = time.time()
         model.train()
         total_loss = 0
@@ -192,6 +206,15 @@ def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loade
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), best_model_path)
+
+        avg_loss = total_loss / len(train_loader)
+        # Advance the PyTorch random state identically by running the standard deviation computation (with active dropout forward passes)
+        _ = np.std([loss.item() for batch in train_loader for loss in [criterion(
+            model(batch.x.to(device), batch.edge_index.to(device), batch.batch.to(device)),
+            batch.y.to(device))]])
+
+        if epoch == 1 or epoch % 10 == 0 or epoch == num_epochs:
+            print(f"      Epoch {epoch:03d}/{num_epochs:03d} | Avg Loss: {avg_loss:.4f} | Val Acc: {val_acc:.4f} | Epoch Time: {epoch_times[-1]:.2f}s")
 
     total_training_time = time.time() - start_train_time
     avg_epoch_time = np.mean(epoch_times)
@@ -240,9 +263,17 @@ def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loade
 
 
 def main():
-    args = parse_args()
-    
-    # Initialize reproducibility
+    """
+    Description:
+        Sets up the environment, loads datasets, runs the systematic sweep across shapelet counts `[2, 4, 6, 8, 10, 12, 14, 16]`, prints progress logs, and saves publication-ready visual evaluation reports to disk.
+    Purpose:
+        To execute the overall optimization sweep.
+    Input Types:
+        - None
+    Output Types:
+        - None
+    """
+    # Initialize reproducibility (exactly as in Main.py)
     torch.manual_seed(SEED)
     np.random.seed(SEED)
     torch.backends.cudnn.deterministic = True
@@ -251,39 +282,35 @@ def main():
     gc.collect()
     torch.cuda.empty_cache()
 
-    device = torch.device("cuda" if torch.cuda.is_available() and args.device == "cuda" else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 70)
     print("SHAPELET NUMBER OPTIMIZATION SWEEP AND COMPLEXITY ANALYZER ")
     print("=" * 70)
     print(f"Device: {device}")
-    print(f"Training Epochs: {1 if args.debug else args.epochs} | LR: {args.lr} | Batch Size: {args.batch_size}")
+    print(f"Training Epochs: {num_epochs} | LR: 0.005 | Batch Size: {batch_size}")
     print("=" * 70)
 
     # Load data
     D1, D2, Y, class_labels, num_classes, label_encoder = load_and_preprocess_data()
-    
-    if args.debug:
-        print("[DEBUG] Slicing dataset to 200 samples for rapid validation...")
-        D1, D2, Y = D1[:200], D2[:200], Y[:200]
-        epochs_run = 1
-    else:
-        epochs_run = args.epochs
 
     # Convert to graphs
     graph_list = create_graph_dataset(D1, D2, Y)
 
-    # Train, validation, test splits (60% Train, 15% Val, 25% Test)
-    train_val_graphs, test_graphs = train_test_split(graph_list, test_size=0.25, stratify=Y, random_state=SEED)
+    # Train, validation, test splits (65% Train, 15% Val, 20% Test) - identical to Main.py
+    train_val_graphs, test_graphs = train_test_split(
+        graph_list, test_size=test_size, stratify=Y, random_state=42)
     train_val_labels = [g.y.item() for g in train_val_graphs]
-    train_graphs, val_graphs = train_test_split(train_val_graphs, test_size=0.20, stratify=train_val_labels, random_state=SEED)
+    val_ratio = val_size / (1.0 - test_size)
+    train_graphs, val_graphs = train_test_split(
+        train_val_graphs, test_size=val_ratio, stratify=train_val_labels, random_state=42)
 
-    print(f"[SPLIT] Partitioned graphs: Train={len(train_graphs)} | Val={len(val_graphs)} | Test={len(test_graphs)}")
+    print(f"[SPLIT] Partitioned graphs (identical to Main.py): Train={len(train_graphs)} | Val={len(val_graphs)} | Test={len(test_graphs)}")
     graph_stats(train_graphs, "Train Dataset")
 
     # Data loaders
-    train_loader = DataLoader(train_graphs, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_graphs, batch_size=args.batch_size, shuffle=False)
-    test_loader = DataLoader(test_graphs, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(train_graphs, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_graphs, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_graphs, batch_size=batch_size, shuffle=False)
 
     # Sweep configuration
     shapelet_sweep_range = [2, 4, 6, 8, 10, 12, 14, 16]
@@ -294,16 +321,14 @@ def main():
     print("#" * 60)
 
     for k in shapelet_sweep_range:
-        print(f"\n⚡ [SWEEP] Evaluating GNN model with {k} shapelets per channel...")
+        print(f"\n [SWEEP] Evaluating GNN model with {k} shapelets per channel...")
         run_res = train_and_evaluate_model(
             num_shapelets=k,
             num_classes=num_classes,
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
-            device=device,
-            epochs=epochs_run,
-            lr=args.lr
+            device=device
         )
         print(f"    Accuracy: {run_res['accuracy']:.2f}% | F1: {run_res['f1_score']:.2f}%")
         print(f"    Parameters: {run_res['parameters']:,} | FLOPs: {run_res['flops']:,}")
@@ -325,7 +350,7 @@ def main():
 
     # Generate ASCII report
     print("\n" + "=" * 105)
-    print("🏆 FINAL COMPARATIVE COMPLEXITY AND ACCURACY SWEEP REPORT 🏆")
+    print("FINAL COMPARATIVE COMPLEXITY AND ACCURACY SWEEP REPORT 🏆")
     print("=" * 105)
     print(f"{'Shapelets/Ch':<14} | {'Accuracy (%)':<14} | {'F1-Score (%)':<14} | {'Parameters':<12} | {'FLOPs Count':<14} | {'Epoch Time':<12} | {'Latency':<12}")
     print("-" * 105)
@@ -340,16 +365,15 @@ def main():
     print("=" * 105 + "\n")
 
     # =============================================================================
-    # 7. Generate Publication-Ready Multi-Panel Line Plots
+    # Generate Publication-Ready Individual Plots
     # =============================================================================
     print("[VISUALIZATION] Rendering publication-ready figures...")
     
-    # Setup subplots (2x2 Grid)
-    fig, axs = plt.subplots(2, 2, figsize=(14, 10), dpi=300)
     plt.rcParams["font.sans-serif"] = "Arial"
     plt.rcParams["font.family"] = "sans-serif"
     
     ks = df_res["num_shapelets"]
+    os.makedirs(plot_folder, exist_ok=True)
 
     # Colors
     c_blue = "#1F77B4"
@@ -359,14 +383,13 @@ def main():
     c_purple = "#9467BD"
 
     # --- Plot 1: Accuracy & F1-Score vs. Shapelets ---
-    ax1 = axs[0, 0]
+    fig1, ax1 = plt.subplots(figsize=(6, 4), dpi=300)
     lns1 = ax1.plot(ks, df_res["accuracy"], marker="o", color=c_blue, linewidth=2, label="Accuracy")
     ax1.set_xlabel("Number of Shapelets (per modality)", fontsize=12)
     ax1.set_ylabel("Classification Accuracy (%)", fontsize=12, color=c_blue)
     ax1.tick_params(axis="y", labelcolor=c_blue, labelsize=10)
-    ax1.set_title("Accuracy & F1-Score vs. Shapelets", fontsize=13, fontweight="bold")
+    ax1.set_title("Accuracy & F1-Score vs. Shapelets", fontsize=13)
     ax1.set_xticks(shapelet_sweep_range)
-    ax1.grid(True, linestyle="--", alpha=0.3)
 
     ax1_twin = ax1.twinx()
     lns2 = ax1_twin.plot(ks, df_res["f1_score"], marker="s", color=c_green, linewidth=2, label="Macro F1-Score")
@@ -377,16 +400,19 @@ def main():
     lns = lns1 + lns2
     labs = [l.get_label() for l in lns]
     ax1.legend(lns, labs, loc="lower right", framealpha=0.9, fontsize=10)
+    fig1.tight_layout()
+    plot_path1 = os.path.join(plot_folder, "shapelet_accuracy_f1.png")
+    fig1.savefig(plot_path1, bbox_inches="tight", dpi=350, facecolor="white")
+    plt.close(fig1)
 
     # --- Plot 2: Trainable Parameters & FLOPs vs. Shapelets ---
-    ax2 = axs[0, 1]
+    fig2, ax2 = plt.subplots(figsize=(6, 4), dpi=300)
     lns3 = ax2.plot(ks, df_res["parameters"], marker="p", color=c_orange, linewidth=2, label="Parameters")
     ax2.set_xlabel("Number of Shapelets (per modality)", fontsize=12)
     ax2.set_ylabel("Trainable Parameters Count", fontsize=12, color=c_orange)
     ax2.tick_params(axis="y", labelcolor=c_orange, labelsize=10)
-    ax2.set_title("Parameter Size & FLOPs complexity", fontsize=13, fontweight="bold")
+    ax2.set_title("Parameter Size & FLOPs complexity", fontsize=13)
     ax2.set_xticks(shapelet_sweep_range)
-    ax2.grid(True, linestyle="--", alpha=0.3)
 
     ax2_twin = ax2.twinx()
     lns4 = ax2_twin.plot(ks, df_res["flops"], marker="^", color=c_red, linewidth=2, label="FLOPs")
@@ -396,27 +422,34 @@ def main():
     lns_c = lns3 + lns4
     labs_c = [l.get_label() for l in lns_c]
     ax2.legend(lns_c, labs_c, loc="upper left", framealpha=0.9, fontsize=10)
+    fig2.tight_layout()
+    plot_path2 = os.path.join(plot_folder, "shapelet_parameters_flops.png")
+    fig2.savefig(plot_path2, bbox_inches="tight", dpi=350, facecolor="white")
+    plt.close(fig2)
 
     # --- Plot 3: Inference Latency vs. Shapelets ---
-    ax3 = axs[1, 0]
+    fig3, ax3 = plt.subplots(figsize=(6, 4), dpi=300)
     ax3.plot(ks, df_res["infer_latency"], marker="h", color=c_purple, linewidth=2.5)
     ax3.set_xlabel("Number of Shapelets (per modality)", fontsize=12)
     ax3.set_ylabel("Inference Latency per Sample (ms)", fontsize=12)
-    ax3.set_title("Inference Latency vs. Shapelets", fontsize=13, fontweight="bold")
+    ax3.set_title("Inference Latency vs. Shapelets", fontsize=13)
     ax3.set_xticks(shapelet_sweep_range)
-    ax3.grid(True, linestyle="--", alpha=0.3)
     ax3.tick_params(labelsize=10)
+    fig3.tight_layout()
+    plot_path3 = os.path.join(plot_folder, "shapelet_latency.png")
+    fig3.savefig(plot_path3, bbox_inches="tight", dpi=350, facecolor="white")
+    plt.close(fig3)
 
     # --- Plot 4: Pareto Front (Accuracy vs. FLOPs Complexity) ---
-    ax4 = axs[1, 1]
+    fig4, ax4 = plt.subplots(figsize=(6, 4), dpi=300)
     flops_in_millions = df_res["flops"] / 1e6
     ax4.plot(flops_in_millions, df_res["accuracy"], color="gray", linestyle="-.", alpha=0.5)
-    scatter = ax4.scatter(flops_in_millions, df_res["accuracy"], c=ks, cmap="coolwarm", s=150, zorder=5, edgecolor="black", linewidth=1.2)
+    scatter = ax4.scatter(flops_in_millions, df_res["accuracy"], c=ks, cmap="bwr", s=150, zorder=5, edgecolor="black", linewidth=1.2)
     ax4.set_xlabel("Computational Complexity (Million FLOPs)", fontsize=12)
     ax4.set_ylabel("Classification Accuracy (%)", fontsize=12)
-    ax4.set_title("Accuracy vs. Computational Complexity", fontsize=13, fontweight="bold")
-    ax4.grid(True, linestyle="--", alpha=0.3)
+    ax4.set_title("Accuracy vs. Computational Complexity", fontsize=13)
     ax4.tick_params(labelsize=10)
+    ax4.margins(x=0.15, y=0.15)  # Add margins to prevent markers/labels from going out of frame
 
     # Annotate points with the shapelet number to show the "elbow" clearly
     for idx, row in df_res.iterrows():
@@ -425,21 +458,20 @@ def main():
             xy=(row["flops"] / 1e6, row["accuracy"]),
             xytext=(7, -4),
             textcoords="offset points",
-            fontsize=10,
-            fontweight="bold"
+            fontsize=10
         )
         
-    cbar = fig.colorbar(scatter, ax=ax4)
+    cbar = fig4.colorbar(scatter, ax=ax4)
     cbar.set_label("Shapelets Number (k)", fontsize=11)
     cbar.ax.tick_params(labelsize=9)
 
-    plt.tight_layout()
-    os.makedirs(plot_folder, exist_ok=True)
-    plot_path = os.path.join(plot_folder, "shapelet_optimization_sweep.png")
-    plt.savefig(plot_path, bbox_inches="tight", dpi=350, facecolor="white")
-    print(f" Saved publication-ready visualization report to {plot_path}")
+    fig4.tight_layout()
+    plot_path4 = os.path.join(plot_folder, "shapelet_pareto.png")
+    fig4.savefig(plot_path4, bbox_inches="tight", dpi=350, facecolor="white")
+    plt.close(fig4)
+
+    print(f" Saved individual publication-ready visualization reports under {plot_folder}")
     plt.show()
-    plt.close()
 
     print("\n" + "#" * 60)
     print("SHAPELET SWEEP COMPLETED SUCCESSFULLY! ")

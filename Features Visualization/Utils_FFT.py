@@ -1,51 +1,46 @@
+# -*- coding: utf-8 -*-
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
+Implementation Includes:
+- Computing Fast Fourier Transforms (FFT) on multi-channel sensors.
+- Calculating power spectral density (PSD) and grouping frequencies into discrete bands.
+- Plotting relative and absolute spectral energy across composition classes for optical and acoustic signals.
+
+Note: Any reuse of this code should be authorized by the code author.
+"""
+
+import os
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import signal
-import seaborn as sns
-import matplotlib.patches as mpatches
-import os
-from scipy import signal
-
-import numpy as np
-import matplotlib.pyplot as plt
-import os
 import seaborn as sns
 from scipy import signal
 from matplotlib.gridspec import GridSpec
-
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-from scipy import signal
 
 
 def Frequencyplot(rawspace_list, labels_list, class_labels,
                   folder_created, sample_rate, windowsize,
                   n_bands=5, channel=0):
     """
-    Generate a grid of PSD plots with the last subplot centered if the number
-    of classes is odd. X-axis is shown in kHz.
-
-    Parameters
-    ----------
-    rawspace_list : list of tuples
-        Each element is (CH1, CH2) where CHi is a 1D numpy array.
-    labels_list : list[int]
-        Class index per sample in rawspace_list.
-    class_labels : dict[int, str]
-        Mapping: class index -> readable class name.
-    folder_created : str
-        Directory to save the figure.
-    sample_rate : int
-        Sampling rate in Hz.
-    windowsize : int
-        (Kept for compatibility; not used directly in PSD but kept in signature.)
-    n_bands : int
-        Number of frequency bands to shade across [0, Nyquist].
-    channel : int
-        0 = CH1 (Acoustic), 1 = CH2 (Optical)
+    Description:
+        Generates a grid of Power Spectral Density (PSD) plots for each alloy composition class, centering the last subplot if the number of classes is odd.
+    Purpose:
+        To perform frequency domain analysis on multi-modal signals and verify spectral energy distributions per class.
+    Input Types:
+        - rawspace_list (list): List of tuples (CH1, CH2) where each element is a 1D numpy array of signal values.
+        - labels_list (list): Corresponding class labels per sample.
+        - class_labels (dict): Mapping from class index (int) to readable class name (str).
+        - folder_created (str): Directory where the output figure is saved.
+        - sample_rate (int): Sampling rate of the raw signals in Hz.
+        - windowsize (int): Placeholder for legacy code compatibility.
+        - n_bands (int): Number of frequency bands to shade under the PSD curve.
+        - channel (int): Index of the channel to plot (0 for Acoustic, 1 for Optical).
+    Output Types:
+        - save_path (str): File path of the saved PNG figure.
     """
     assert channel in [0, 1], "Channel must be 0 (CH1) or 1 (CH2)"
     if not os.path.exists(folder_created):
@@ -264,27 +259,21 @@ def Frequencyplot(rawspace_list, labels_list, class_labels,
 def Frequencyplot_(rawspace_list, labels_list, class_labels,
                    folder_created, sample_rate, windowsize, n_bands=5, channel=0):
     """
-    Loops over samples and computes PSD for a single selected channel (0 or 1) per sample.
-    Applies low-pass Butterworth filter and shades dynamic frequency bands.
-
-    Parameters:
-    -----------
-    rawspace_list : list of tuples (CH1, CH2)
-        Each tuple contains two 1D arrays for dual-channel signals.
-    labels_list : list or np.ndarray
-        Class label for each sample.
-    class_labels : dict
-        Maps int → class name (e.g., 1 → "20%-Cu").
-    folder_created : str
-        Directory to save the plots.
-    sample_rate : int
-        Sampling rate in Hz.
-    windowsize : int
-        Used for chunking matplotlib paths.
-    n_bands : int
-        Number of frequency bands to shade.
-    channel : int
-        0 = CH1 (Acoustic emission), 1 = CH2 (Optical emission)
+    Description:
+        Loops over each sample to individually compute, shade frequency bands, and save high-resolution PSD plots for a selected channel.
+    Purpose:
+        To examine individual sensor sample spectral contents in detail.
+    Input Types:
+        - rawspace_list (list): List of tuples (CH1, CH2) representing dual-channel inputs.
+        - labels_list (list or numpy.ndarray): Class label for each sample.
+        - class_labels (dict): Mapping of integer class index to its descriptive name string.
+        - folder_created (str): Output folder path.
+        - sample_rate (int): Sampling rate in Hz.
+        - windowsize (int): Used to configure matplotlib path chunking for rendering performance.
+        - n_bands (int): Number of frequency bands to shade in the plot.
+        - channel (int): Index of the channel (0 for Acoustic, 1 for Optical).
+    Output Types:
+        - None: Directly saves and renders the figures.
     """
 
     assert channel in [0, 1], "Channel must be 0 (Acoustic) or 1 (Optical)"

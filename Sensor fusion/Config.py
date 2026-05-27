@@ -1,34 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Configuration constants for the multimodal GAT (Graph Attention Network) project.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module contains all the hyperparameters, paths, and settings for:
-- Data loading and preprocessing
-- Model architecture
-- Training process
-- System paths
+Implementation Includes:
+- Establishing default hyper-parameters: random seed, batch size, learning rates, epochs, test-val ratios, shapelet size, and directory targets.
 
-The configuration is organized into sections:
-1. System and reproducibility settings
-2. Model hyperparameters
-3. Data processing parameters
-4. Directory and path configurations
-
-Note:
-    All paths are relative to the project root directory.
-    Seed values ensure reproducibility across runs.
-    Directory creation is handled automatically where needed.
-
-Example:
-    >>> from Config import SEED, num_epochs, data_folder
-    >>> print(f"Using random seed: {SEED}")
-    Using random seed: 42
-    
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
-
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os

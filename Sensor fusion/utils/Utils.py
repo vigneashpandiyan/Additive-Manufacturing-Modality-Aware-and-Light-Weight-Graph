@@ -1,29 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Utility functions for data processing, visualization aids, and model setup.
+"""
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module contains helper functions for:
-- Setting random seeds for reproducibility on GPU.
-- Drawing an illustrative temporal graph representation (for docs/figures).
-- Basic data transforms (normalize / standardize).
-- Converting dual-channel time series into a PyG graph via sliding windows.
-- Quick graph stats printout.
+Implementation Includes:
+- Data normalization, standardization, graph construction from sliding sub-windows, and reproducible GPU random seeding.
 
-Notes
------
-- Public function behavior is preserved. Minor guards were added to avoid
-  divide-by-zero in normalization/standardization.
-- `create_shapelet_graph_batched` builds a fully-connected, bidirectional graph
-  over sliding windows; node features are [2, window_size] (AE & Back-reflection).
-  
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
-
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
-
 import os
 import sys
 
@@ -37,27 +26,19 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import networkx as nx
-from sklearn.utils import resample  # noqa: F401
-from sklearn.preprocessing import LabelEncoder  # noqa: F401
-from sklearn.model_selection import train_test_split  # noqa: F401
 from torch_geometric.data import Data
 
 
-# -----------------------------------------------------------------------------
-# Visual guide: Temporal graph diagram
-# -----------------------------------------------------------------------------
-
 def plot_temporal_graph_representation() -> None:
     """
-    Visualize an illustrative temporal graph with:
-    - 5 primary nodes (1–5) + 3 continuation nodes (6–8)
-    - Triangles inside nodes for channels: Acoustic (▲) / Back Reflection (▼)
-    - Forward (green) and backward (violet) directed edges between primary nodes
-    - Continuation edges forward into "empty" nodes
-    - Labels above primary nodes with time spans; faint labels for continuation
-
-    This is meant for documentation/figures to convey the temporal connectivity
-    you use elsewhere (it does not feed the model).
+    Description:
+        Constructs and visualizes an illustrative temporal graph diagram including node details, color-coded forward/backward directed edges, internal modality symbols (▲/▼), and temporal labels. Saves the diagram to disk.
+    Purpose:
+        To save illustrative explanation figures of the temporal connectivity layout used in the framework.
+    Input Types:
+        - None
+    Output Types:
+        - None: Directly draws and saves the diagram.
     """
     num_primary_nodes = 5
     num_empty_nodes = 3
@@ -228,21 +209,16 @@ def plot_temporal_graph_representation() -> None:
     plt.close()
 
 
-# -----------------------------------------------------------------------------
-# Reproducibility
-# -----------------------------------------------------------------------------
-
 def set_gpu_seed(seed: int = 42) -> None:
-    """Set random seed for CUDA operations, if available.
-
-    Parameters
-    ----------
-    seed : int
-        Seed to use across CUDA devices.
-
-    Notes
-    -----
-    - Silently no-ops if CUDA is not available.
+    """
+    Description:
+        Sets random seeds for CUDA devices and runs CUDA interprocess collections.
+    Purpose:
+        To establish reproducibility on GPU accelerators.
+    Input Types:
+        - seed (int): Seed number. Default is 42.
+    Output Types:
+        - None
     """
     try:
         torch.cuda.manual_seed_all(seed)
@@ -253,26 +229,16 @@ def set_gpu_seed(seed: int = 42) -> None:
         pass
 
 
-# -----------------------------------------------------------------------------
-# Data transforms
-# -----------------------------------------------------------------------------
-
 def normalize(data: np.ndarray) -> np.ndarray:
-    """Min–Max normalize an array to [-1, 1].
-
-    Parameters
-    ----------
-    data : np.ndarray
-        Input array of any shape.
-
-    Returns
-    -------
-    np.ndarray
-        Normalized array in [-1, 1].
-
-    Notes
-    -----
-    - Adds a small epsilon if max == min to avoid division by zero.
+    """
+    Description:
+        Min–Max normalizes the values of an array to the interval [-1, 1], avoiding divide-by-zero errors.
+    Purpose:
+        To normalize raw signal values.
+    Input Types:
+        - data (numpy.ndarray): Multi-dimensional array.
+    Output Types:
+        - normalized (numpy.ndarray): Normalized array.
     """
     print("[NORMALIZATION] Performing Min-Max normalization to [-1, 1]")
     data_min = np.min(data)
@@ -285,21 +251,15 @@ def normalize(data: np.ndarray) -> np.ndarray:
 
 
 def standardize(data: np.ndarray) -> np.ndarray:
-    """Standardize an array to zero mean and unit variance.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        Input array of any shape.
-
-    Returns
-    -------
-    np.ndarray
-        Standardized array with ~zero mean and ~unit variance.
-
-    Notes
-    -----
-    - Adds a small epsilon if std == 0 to avoid division by zero.
+    """
+    Description:
+        Standardizes the values of an input array to zero mean and unit variance.
+    Purpose:
+        To stabilize input scaling across sensory modalities.
+    Input Types:
+        - data (numpy.ndarray): Input array.
+    Output Types:
+        - standardized (numpy.ndarray): Standardized array.
     """
     print("[STANDARDIZATION] Performing standardization")
     mean = np.mean(data)
@@ -310,10 +270,6 @@ def standardize(data: np.ndarray) -> np.ndarray:
     return standardized
 
 
-# -----------------------------------------------------------------------------
-# Graph construction
-# -----------------------------------------------------------------------------
-
 def create_shapelet_graph_batched(
     d1_sample: np.ndarray,
     d2_sample: np.ndarray,
@@ -322,38 +278,18 @@ def create_shapelet_graph_batched(
     stride: int = 250,
 ) -> Data:
     """
-    Construct a fully-connected bidirectional graph from two-channel time series
-    via sliding windows.
-
-    Each window of length `window_size` becomes a node whose feature is a tensor
-    of shape [2, window_size] (channel-first: AE index 0, Back-reflection index 1).
-    All node pairs are connected in both directions (i != j).
-
-    Parameters
-    ----------
-    d1_sample : np.ndarray, shape (T,)
-        Channel-1 time series (Acoustic Emission).
-    d2_sample : np.ndarray, shape (T,)
-        Channel-2 time series (Back-reflection).
-    label : int
-        Graph-level class label.
-    window_size : int
-        Sliding window length.
-    stride : int
-        Step size between window starts.
-
-    Returns
-    -------
-    Data
-        PyG Data with:
-            x : FloatTensor [num_nodes, 2, window_size]
-            edge_index : LongTensor [2, num_edges]
-            y : LongTensor []  (scalar class label)
-
-    Notes
-    -----
-    - No self-loops are added (i != j). If desired, you can add them later.
-    - Windows are contiguous segments; no padding is applied at the tail.
+    Description:
+        Extracts sliding temporal windows from two input signals, constructs windowed node feature matrices, maps fully connected bidirectional edge index matrices, and wraps them inside PyTorch Geometric `Data` graphs.
+    Purpose:
+        To form graph representations for GNN spatial-temporal processing.
+    Input Types:
+        - d1_sample (numpy.ndarray): Acoustic emission signal array.
+        - d2_sample (numpy.ndarray): Optical emission signal array.
+        - label (int): Alloy composition target index.
+        - window_size (int): Segment window length. Default is 500.
+        - stride (int): Step size. Default is 250.
+    Output Types:
+        - Graph (torch_geometric.data.Data): Graph containing window node tensors and edge index maps.
     """
     # Basic input checks
     assert d1_sample.ndim == 1 and d2_sample.ndim == 1, "Inputs must be 1D arrays."
@@ -396,19 +332,17 @@ def create_shapelet_graph_batched(
     return Data(x=window_tensor, edge_index=edge_index, y=y)
 
 
-# -----------------------------------------------------------------------------
-# Misc
-# -----------------------------------------------------------------------------
-
 def graph_stats(graphs: Sequence[Data], name: str = "") -> None:
-    """Print a quick summary of node counts across a list of graphs.
-
-    Parameters
-    ----------
-    graphs : Sequence[Data]
-        Iterable of PyG graphs.
-    name : str
-        Optional label printed in the header.
+    """
+    Description:
+        Calculates and prints out statistics (minimum, maximum, mean) of node counts across a sequence of PyG Graph samples.
+    Purpose:
+        To log dataset properties.
+    Input Types:
+        - graphs (Sequence[Data]): Array of Graph samples.
+        - name (str): Display header name. Default is "".
+    Output Types:
+        - None
     """
     num_nodes = [int(g.num_nodes) for g in graphs]
     if not num_nodes:

@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jul 29 11:59:21 2025
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-@author: vpsora
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
+Implementation Includes:
+- Normalizations, reproducibility settings, and unimodal shapelet-graph extraction helpers.
+- Model performance evaluation and diagnostic training curves visualization functions.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
@@ -20,10 +24,15 @@ SEED = 20  # Random seed for reproducibility
 
 
 def set_gpu_seed(seed: int = SEED):
-    """Set random seed for GPU operations to ensure reproducibility.
-
-    Args:
-        seed (int): Random seed value (default: 42)
+    """
+    Description:
+        Sets the random seed for GPU operations (specifically CUDA) and forces garbage collection.
+    Purpose:
+        To guarantee reproducibility of deep learning calculations across GPU/CUDA executions.
+    Input Types:
+        - seed (int): The integer random seed value to enforce.
+    Output Types:
+        - None
     """
     try:
         torch.cuda.manual_seed_all(seed)
@@ -33,7 +42,16 @@ def set_gpu_seed(seed: int = SEED):
 
 
 def normalize(data):
-    """Normalize data to [-1, 1] range"""
+    """
+    Description:
+        Normalizes the input numpy array to [-1, 1] range using Min-Max scaling.
+    Purpose:
+        To scale input signals uniformly to a balanced dynamic range.
+    Input Types:
+        - data (np.ndarray): Numeric array/matrix representing raw signal segments.
+    Output Types:
+        - normalized (np.ndarray): Scaled numeric array in the range [-1, 1].
+    """
     print("[NORMALIZATION] Performing Min-Max normalization to [-1, 1]")
     data_min = np.min(data)
     data_max = np.max(data)
@@ -50,7 +68,16 @@ def normalize(data):
 
 
 def standardize(data):
-    """Standardize data to zero mean and unit variance"""
+    """
+    Description:
+        Standardizes the input numpy array to zero mean and unit variance.
+    Purpose:
+        To scale signal features by centered mean and standard deviation.
+    Input Types:
+        - data (np.ndarray): Numeric array representing raw signals.
+    Output Types:
+        - standardized (np.ndarray): Zero-mean, unit-variance standardized array.
+    """
     print("[STANDARDIZATION] Performing standardization")
     mean = np.mean(data)
     std = np.std(data)
@@ -67,28 +94,35 @@ def standardize(data):
 
 
 def count_parameters(model):
-    """Count total number of trainable parameters in model."""
+    """
+    Description:
+        Counts the total number of trainable (requires_grad=True) parameters in the given PyTorch model.
+    Purpose:
+        To calculate model complexity and scale footprint measurements for benchmarking.
+    Input Types:
+        - model (nn.Module): PyTorch neural network model.
+    Output Types:
+        - total_params (int): Total count of trainable weights/parameters.
+    """
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def plot_training_curves(epochs, train_loss_means, train_loss_stds, val_accuracies, epoch_times, plot_folder):
     """
-    Plots training loss (with std), validation accuracy, and epoch timing curves.
-
-    Parameters:
-    -----------
-    epochs : list or np.ndarray
-        List of epoch indices.
-    train_loss_means : list or np.ndarray
-        Mean training loss for each epoch.
-    train_loss_stds : list or np.ndarray
-        Std deviation of training loss for each epoch.
-    val_accuracies : list or np.ndarray
-        Validation accuracy per epoch.
-    epoch_times : list or np.ndarray
-        Duration of each epoch in seconds.
-    plot_folder : str
-        Folder to save plots. Created if it doesn't exist.
+    Description:
+        Plots and exports visual diagnostic curves tracking training loss (with standard deviation fills),
+        validation accuracy, and processing execution time per epoch.
+    Purpose:
+        To support post-training checks, verify convergence rates, and diagnose potential underfitting/overfitting.
+    Input Types:
+        - epochs (list or np.ndarray): Integer epoch counts/indexes.
+        - train_loss_means (list or np.ndarray): Numeric average training loss value per epoch.
+        - train_loss_stds (list or np.ndarray): Standard deviation values of training loss per epoch.
+        - val_accuracies (list or np.ndarray): Floating-point validation accuracy scores per epoch.
+        - epoch_times (list or np.ndarray): Execution latency in seconds per epoch.
+        - plot_folder (str): Target directory to save generated line plots.
+    Output Types:
+        - None
     """
     os.makedirs(plot_folder, exist_ok=True)
 
@@ -131,31 +165,22 @@ def plot_training_curves(epochs, train_loss_means, train_loss_stds, val_accuraci
 
 def evaluate_gnn_model(gnn_model, test_loader, model_save_path, device, label_encoder, plot_folder):
     """
-    Evaluates a trained GNN model on the test set.
-
-    Parameters:
-    -----------
-    gnn_model : nn.Module
-        Trained GNN model.
-    test_loader : DataLoader
-        DataLoader for the test set.
-    model_save_path : str
-        Path to the saved model checkpoint (.pt).
-    device : torch.device
-        Device to run evaluation on.
-    label_encoder : LabelEncoder
-        Fitted label encoder to decode class names.
-    plot_folder : str
-        Directory to save the confusion matrix plot.
-
-    Returns:
-    --------
-    accuracy : float
-        Overall test accuracy.
-    avg_infer_time : float
-        Average inference time per batch in seconds.
+    Description:
+        Loads the best saved checkpoint of the GNN model, computes inference over the test dataset,
+        reports final accuracy, plots a normalized confusion matrix, and computes average batch inference latency.
+    Purpose:
+        To evaluate model performance, class-wise generalization capability, and production execution efficiency.
+    Input Types:
+        - gnn_model (nn.Module): The GNN model architecture.
+        - test_loader (DataLoader): PyTorch Geometric DataLoader for testing data.
+        - model_save_path (str): Filepath location to the best saved model state dictionary (.pt).
+        - device (torch.device): CUDA or CPU execution hardware context.
+        - label_encoder (LabelEncoder): Scikit-learn fitted label encoder for decoding integer class predictions back to actual category strings.
+        - plot_folder (str): Target directory where the confusion matrix visualization is saved.
+    Output Types:
+        - accuracy (float): Computed test classification accuracy.
+        - avg_infer_time (float): Average inference duration in seconds per data batch.
     """
-
     print("🚀 Evaluating on test set...")
     gnn_model.load_state_dict(torch.load(model_save_path))
     gnn_model.eval()
@@ -205,24 +230,18 @@ def evaluate_gnn_model(gnn_model, test_loader, model_save_path, device, label_en
 
 def create_shapelet_graph_batched(d1_sample, label, window_size=500, stride=250):
     """
-    Constructs a graph from single-channel time series using sliding windows.
-
-    Parameters:
-    -----------
-    d1_sample : np.ndarray
-        1D numpy array of shape (T,) representing the time-series signal.
-    label : int
-        Integer class label for the time series.
-    window_size : int, optional
-        Size of the sliding window (default is 500).
-    stride : int, optional
-        Stride length between consecutive windows (default is 250).
-
-    Returns:
-    --------
-    Data : torch_geometric.data.Data
-        A graph where each node corresponds to a windowed segment (1×window_size),
-        and edges connect temporally adjacent segments.
+    Description:
+        Constructs a temporal graph from a single-channel raw signal by extracting sliding windows as node features
+        and linking all extracted nodes bidirectionally to represent a fully connected graph topology.
+    Purpose:
+        To transform a raw unimodal time-series waveform into a PyTorch Geometric Graph structure suitable for GNN layers.
+    Input Types:
+        - d1_sample (np.ndarray): 1D array representing the raw time-series sequence.
+        - label (int): Integer encoded composition class label.
+        - window_size (int): Temporal duration length of each sliding window (default: 500).
+        - stride (int): Step stride spacing between consecutive sliding windows (default: 250).
+    Output Types:
+        - graph (torch_geometric.data.Data): PyG graph object containing node features (x), edge lists (edge_index), and class target (y).
     """
     N = d1_sample.shape[0]
     # print(f"Input d1_sample shape: {d1_sample.shape}")
@@ -254,6 +273,17 @@ def create_shapelet_graph_batched(d1_sample, label, window_size=500, stride=250)
 
 
 def graph_stats(graphs, name=""):
+    """
+    Description:
+        Computes and prints descriptive statistics about a list of graphs, including node count range and average nodes per graph.
+    Purpose:
+        To inspect graph sizes and verify that structural preprocessing was correctly applied.
+    Input Types:
+        - graphs (list of torch_geometric.data.Data): Pre-constructed Graph data list.
+        - name (str): Dataset description label (e.g., 'Train' or 'Test').
+    Output Types:
+        - None
+    """
     num_nodes = [g.num_nodes for g in graphs]
     print(f"📊 {name} Graph Stats")
     print(f"  - Total graphs: {len(graphs)}")

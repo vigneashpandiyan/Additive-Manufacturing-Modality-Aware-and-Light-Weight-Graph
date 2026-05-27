@@ -1,31 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Complete Inference and Visualization Script for Multimodal GAT with Shapelets.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This module provides utilities to (1) quantify class-wise channel contributions
-(Acoustic vs Optical) using saliency backprop, and (2) compute/plot average
-node-level saliency per class from a balanced subset of graphs.
+Implementation Includes:
+- Calculating saliency-based channel and node contributions for interpretability.
+- Identifying which segments of optical/acoustic waveforms dominate the composition prediction.
 
-Assumptions
------------
-- Each `Data` object holds:
-    x: Tensor [num_nodes, 2, T]          # two channels: AE (0) and Optical (1)
-    edge_index: LongTensor [2, num_edges]
-    batch: LongTensor [num_nodes]        # node -> graph id
-    y: LongTensor [num_graphs]           # graph-level class label
-- The model forward signature is: model(x, edge_index, batch) -> logits [B, C]
-  where B = number of graphs in the mini-batch, C = number of classes.
-
-Notes
------
-- Saliency is computed via gradients of the class score w.r.t. inputs (x).
-- Channel contributions are aggregated with global max pool over nodes.
-
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
-
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 from collections import OrderedDict
@@ -53,40 +38,18 @@ from torch_geometric.loader import DataLoader
 
 def saliency_channel_contributions_per_class(model, correct_graphs, device, plot_folder, save_prefix):
     """
-    Compute and visualize per-class channel contributions (AE vs Optical) using saliency.
-
-    For each mini-batch of graphs, this function:
-    1) Enables gradient on the inputs x and runs a forward pass.
-    2) Backpropagates the score of the ground-truth class to obtain saliency.
-    3) Sums saliency across time for each channel per node, then aggregates per graph
-       with a global max pool across nodes (focuses on the most salient node).
-    4) Averages graph-level contributions within each class, normalizes to percentages,
-       and plots side-by-side bars with error bars.
-
-    Parameters
-    ----------
-    model : torch.nn.Module
-        Trained model. Must accept (x, edge_index, batch) and return logits [B, C].
-    correct_graphs : Sequence[torch_geometric.data.Data]
-        Collection of correctly classified graphs (or graphs you want to analyze).
-    device : torch.device or str
-        Device on which to run the computations.
-    plot_folder : str
-        Directory to save the figure.
-    save_prefix : str
-        Filename prefix for the saved plot (PNG).
-
-    Returns
-    -------
-    summary_dict : dict[int, dict[str, float]]
-        Mapping class_id -> {'AE %', 'AE std', 'Optical %', 'Optical std'}.
-        Percentages sum to ~100 within each class (AE% + Optical%).
-
-    Notes
-    -----
-    - Uses global *max* pool over nodes to emphasize the most influential segment.
-      If you prefer smoother aggregation, replace with global_mean_pool.
-    - Uses population std (unbiased=False) for error bars.
+    Description:
+        Enables gradients on inputs, executes backpropagation of target class scores to derive saliency metrics, groups raw values by sensor modality (Acoustic vs. Optical), sums across time steps, pools per graph via a global max operation across nodes, and normalizes percentages to render side-by-side bar plots with standard deviation error bars.
+    Purpose:
+        To calculate and visualize class-wise sensor modality contributions for model explainability.
+    Input Types:
+        - model (torch.nn.Module): Trained neural network model to profile.
+        - correct_graphs (list): Sequence of correctly classified PyG Graph samples.
+        - device (torch.device or str): Target computational device.
+        - plot_folder (str): Directory where the output figure is written.
+        - save_prefix (str): Prefix name for the output image.
+    Output Types:
+        - summary_dict (dict): Nested dictionary mapping class indices to average contribution percentages and standard deviations.
     """
     model.eval()
     dataloader = DataLoader(correct_graphs, batch_size=256, shuffle=False)
@@ -235,48 +198,22 @@ def saliency_channel_contributions_per_class(model, correct_graphs, device, plot
 
 def Node_saliency_per_class(model, correct_graphs, correct_labels, device, plot_folder, save_prefix, ratio=0.5):
     """
-    Compute and visualize normalized per-node saliency for each class (balanced subset).
-
-    This function:
-    1) Groups graphs by class and selects a balanced subset per class
-       (size = floor(min_class_size * ratio), >= 1).
-    2) For each selected graph, backpropagates the predicted class score w.r.t. inputs.
-    3) Reduces saliency across channels/time -> node saliency, then L1-normalizes
-       within each graph so node saliencies sum to 1.
-    4) Averages node saliency vectors across graphs in the same class and plots
-       a grouped bar chart (node index vs. saliency) for all classes.
-
-    Parameters
-    ----------
-    model : torch.nn.Module
-        Trained model. Must accept (x, edge_index, batch) and return logits [B, C].
-    correct_graphs : Sequence[torch_geometric.data.Data]
-        Graphs to analyze.
-    correct_labels : Sequence[torch.Tensor] or list[int]
-        Class labels aligned with `correct_graphs`. Each item is a scalar tensor or int.
-    device : torch.device or str
-        Device on which to run the computations.
-    plot_folder : str
-        Directory to save the figure.
-    save_prefix : str
-        Filename prefix for the saved plot (PNG).
-    ratio : float, optional (default=0.5)
-        Fraction of the smallest class size to sample for balancing (0 < ratio <= 1).
-
-    Returns
-    -------
-    avg_saliency_per_class : dict[int, torch.Tensor]
-        class_id -> mean node saliency vector [num_nodes].
-    count_per_class : dict[int, int]
-        class_id -> number of graphs used from that class.
-
-    Notes
-    -----
-    - Uses the *predicted* class for saliency backprop in each graph
-      (i.e., argmax over logits).
-      If you prefer GT-based attributions, replace pred with the ground-truth label.
-    - Saliency reduction: mean over channels and time dims -> node score.
-    - Node saliencies are L1-normalized per graph before averaging.
+    Description:
+        Groups correct graph inputs by target class, samples a balanced subset, runs backpropagation of predicted class scores, aggregates raw temporal-channel values to extract per-node saliency vectors, L1-normalizes them, calculates averages per alloy class, and plots grouped bar charts.
+    Purpose:
+        To calculate and plot per-node spatial saliency values across alloy composition classes for explainability.
+    Input Types:
+        - model (torch.nn.Module): Trained neural network model.
+        - correct_graphs (list): List of correctly classified graphs.
+        - correct_labels (list or numpy.ndarray): Target class labels aligned with graphs.
+        - device (torch.device or str): Target computational device.
+        - plot_folder (str): Directory where the output figure is written.
+        - save_prefix (str): Prefix name for the output image.
+        - ratio (float): Fraction of the smallest class size to sample for balancing. Default is 0.5.
+    Output Types:
+        - tuple: (avg_saliency_per_class, count_per_class)
+            - avg_saliency_per_class (dict): Maps class indices to normalized node saliency vectors of shape [num_nodes].
+            - count_per_class (dict): Maps class indices to the sampled graph count.
     """
     model = model.to(device)
     model.eval()

@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Dataloader and preprocessing module for dual-channel sensor signals.
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
+
+Implementation Includes:
+- Loading D1 (optical) and D2 (acoustic) waveforms and aligning them with alloy target class labels.
+- Structuring multi-modal time series segments into structured PyTorch Geometric Data graph sequences.
+
+Note: Any reuse of this code should be authorized by the code author.
 """
 
 import os
@@ -20,11 +30,19 @@ from utils.Utils import standardize, create_shapelet_graph_batched
 
 def load_and_preprocess_data():
     """
-    Load raw sensor signals, perform stratified resampling for class balancing,
-    standardize each sensor modality independently, and encode labels.
-    
-    Returns:
-        tuple: (D1, D2, Y, class_labels, num_classes, label_encoder)
+    Description:
+        Loads raw D1/D2 and class label `.npy` files, balances instances per composition class using resampling, encodes target classes, and standardizes sensor data.
+    Purpose:
+        To form a clean, balanced, and normalized pre-processed dataset for benchmark models.
+    Input Types:
+        - None
+    Output Types:
+        - D1 (numpy.ndarray): Balanced and normalized D1 sensor data.
+        - D2 (numpy.ndarray): Balanced and normalized D2 sensor data.
+        - Y (numpy.ndarray): Balanced and encoded target composition classes.
+        - class_labels (numpy.ndarray): Mapping of encoded targets back to original labels.
+        - num_classes (int): Count of unique composition classes.
+        - label_encoder (sklearn.preprocessing.LabelEncoder): Encoder model used to map labels.
     """
     print("[DATA] Loading raw datasets...")
     D1_full = np.load(os.path.join(data_folder, "D1_rawspace_5000.npy"))
@@ -65,7 +83,16 @@ def load_and_preprocess_data():
 
 def create_graph_dataset(D1, D2, Y):
     """
-    Convert raw dual-channel series samples into PyG bidirectional temporal graphs.
+    Description:
+        Translates raw multi-modal time series arrays into sets of windowed node graphs and stratifiably splits them into training and testing collections.
+    Purpose:
+        To construct graph representations necessary for evaluating proposed shapelet-GAT and baseline GNN architectures.
+    Input Types:
+        - D1 (numpy.ndarray): Raw D1 sensor matrix.
+        - D2 (numpy.ndarray): Raw D2 sensor matrix.
+        - Y (numpy.ndarray): Label target array.
+    Output Types:
+        - graph_list (list): training and evaluation graph dataset list.
     """
     print("[BUILD] Converting time-series samples to bidirectional temporal graphs...")
     graph_list = []

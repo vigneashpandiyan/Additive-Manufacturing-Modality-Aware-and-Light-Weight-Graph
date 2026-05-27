@@ -1,93 +1,163 @@
-# Additive Manufacturing Modality-Aware and Light-Weight Graph
+# Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, Explainable Graph-Attention Sensor Fusion Framework
 
+This repository contains the complete implementation and benchmarking suite for the manuscript:
+**"Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, Explainable Graph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"**
 
+Author: **vpsora**  
+Contact: vigneashwara.solairajapandiyan@utu.fi | vigneashpandiyan@gmail.com  
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 📖 Framework Overview
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+This framework utilizes a novel **Shapelet-based Graph Attention Network (GAT)** to perform in-situ composition monitoring of graded multi-material alloys (316L Stainless Steel and CuCrZr) manufactured via laser powder bed fusion (PBF-LB). 
 
-## Add your files
+By extracting sliding temporal windows from co-axial optical and acoustic emissions, representing them as graph nodes, and learning discriminative shapelet matching distances, the network dynamically maps multi-modal signatures into a cohesive, explainable spatial attention graph.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```mermaid
+graph TD
+    A[Multi-Material PBF-LB Emissions] --> B[Acoustic Emissions Ch1]
+    A --> C[Optical Emissions Ch2]
+    
+    B --> D[Sliding Window Segmentation]
+    C --> E[Sliding Window Segmentation]
+    
+    D --> F[Temporal Graph Nodes - 19 Nodes]
+    E --> F
+    
+    F --> G[Parallel BatchedShapeletExtractor]
+    G --> H[Distance Feature Adjacency]
+    
+    H --> I[GNNWithAttention - GAT Layers]
+    I --> J[Global Mean Pooling]
+    
+    J --> K[Classifier MLP]
+    K --> L[Composition Level: 20% to 100% Cu]
 ```
-cd existing_repo
-git remote add origin https://gitlab.utu.fi/vpsora/additive-manufacturing-modality-aware-and-light-weight-graph.git
-git branch -M main
-git push -uf origin main
+
+---
+
+## 📁 Repository Directory Structure
+
+```directory
+├── Features Visualization/      # Frequency-domain spectral features & signal diagnostics
+├── Reviewer_Benchmarking/       # Comprehensive baseline models & LaTeX helper tools
+├── Sensor fusion/               # Core multi-modal GAT-Shapelet framework code
+├── Unimodal/                    # Single-modality baselines (Optical or Acoustic alone)
+└── Data/                        # [Input Target] Holds raw .npy signal spaces and labels
 ```
 
-## Integrate with your tools
+---
 
-- [ ] [Set up project integrations](https://gitlab.utu.fi/vpsora/additive-manufacturing-modality-aware-and-light-weight-graph/-/settings/integrations)
+## ⚙️ Folder Contents & Script Implementations
 
-## Collaborate with your team
+### 1. 🧠 `Sensor fusion/` (Core Multi-Modal Framework)
+This is the main component of the project, orchestrating the multi-modal sensor fusion pipeline.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+*   **`Config.py`**:
+    *   *Objective*: Establishes global reproducibility parameters (random seeds), directories, dataset targets, validation sizes, and hyperparameters (`batch_size=256`, `num_epochs=300`, `shapelet_len=50`, `num_shapelets=10`).
+*   **`Main.py`**:
+    *   *Objective*: Orchestrates the end-to-end framework. Initializes environments, standardizes datasets, structures graph representations, trains/tests the model, saves checkpoints, and runs visual explanation utilities.
+*   **`Main_Shapelet_Optimization.py`**:
+    *   *Objective*: Executes a systematic sweep over shapelet counts ($k \in [2, 4, ..., 16]$) to profile model accuracy against parameter count, execution times, and computational FLOPs.
+*   **`dataloader/data_loader.py`**:
+    *   *Objective*: Implements stratified resampling to balance target compositions, standardizes sensors, and packages multi-channel signals into structured PyTorch Geometric `Data` graphs.
+*   **`network/Network.py`**:
+    *   *Objective*: Implements the GNN architecture:
+        *   `BatchedShapeletExtractor`: A parallel learnable shapelet layer mapping signal segments to node features.
+        *   `GNNWithAttention`: Fuses optical and acoustic node features using a 3-layer GAT structure, global average pooling, and classifier MLP.
+*   **`trainer/Trainer.py`**:
+    *   *Objective*: Handles core execution loops, parameter tracking, validation callbacks, checkpoint saves, and outputs training loss/validation curves.
+*   **`utils/Inference.py` & `Utils.py`**:
+    *   *Objective*: Performs saliency-based gradient backpropagation to evaluate channel/node contributions, and manages standardized GPU seed initializations.
+*   **`visualization/Graph.py` & `Visualization.py`**:
+    *   *Objective*: Generates high-fidelity explanatory figures: attention heatmaps, spatial spring layout graphs, PCA/t-SNE/UMAP dimension embeddings, and shapelet activation curves.
 
-## Test and Deploy
+---
 
-Use the built-in continuous integration in GitLab.
+### 2. 🎛️ `Reviewer_Benchmarking/` (Benchmarking Suite)
+Developed to benchmark the proposed framework against alternative deep learning sequence models.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+*   **`Run_benchmarks.py`**:
+    *   *Objective*: Executes repeated training sweeps across multiple architectures, logging test scores, latencies, memory footprints, and parameters.
+*   **`BenchmarkDataloader/data_loader.py` & `features.py`**:
+    *   *Objective*: Restructures raw signals into 1D sequences and sequences with statistical moments tailored for conventional architectures.
+*   **`BenchmarkNetwork/`**:
+    *   *Objective*: Houses baseline architectures:
+        *   `cnn_1d.py` / `cnn_lstm.py`: Spatial and temporal convolutional baselines.
+        *   `tcn.py` / `transformer.py`: Causal temporal convolutions and self-attention sequence models.
+        *   `gcn_no_shapelets.py` / `gat_no_shapelets.py`: Graph GCN/GAT architectures using direct statistical features instead of learnable shapelets.
+        *   `shapelet_gat.py`: Standard learnable shapelet attention baseline.
+*   **`BenchmarkUtils/helpers.py`, `statistics.py`, & `latex_table.py`**:
+    *   *Objective*: Calculates Peak FLOPs/Latency profiles, evaluates statistical confidence intervals (95% CI), performs Wilcoxon rank-sum tests, and formats benchmarking tables directly into LaTeX.
+*   **`BenchmarkVisualization/plotting.py`**:
+    *   *Objective*: Renders comparative accuracy vs complexity plots and benchmarking performance heatmaps.
 
-***
+---
 
-# Editing this README
+### 3. 📻 `Unimodal/` (Single-Modality Baselines)
+Evaluates GAT-Shapelet performance on individual modalities alone to quantify the advantages of sensor fusion.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+*   **`Shaplet_Unimodal.py`**:
+    *   *Objective*: Evaluates performance exclusively using either Optical emission (D1) or Acoustic emission (D2) signals.
+*   **`trainer.py`**:
+    *   *Objective*: Provides single-modality adapters for `BatchedShapeletExtractor` and `GNNWithAttention`.
+*   **`utils.py`**:
+    *   *Objective*: Manages data pre-scaling, graph translation from 1D waveforms, and dataset stats logging.
 
-## Suggestions for a good README
+---
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### 4. 📈 `Features Visualization/` (Signal Processing & Extraction)
+Explores raw sensor behaviors and generates baseline diagnostic plots.
 
-## Name
-Choose a self-explaining name for your project.
+*   **`Channel Visualize.py`**:
+    *   *Objective*: Extracts and compares optical/acoustic frequencies across all composition percentages.
+*   **`Main_EnergyBands plot.py`**:
+    *   *Objective*: Computes global relative power distributions and maps them to composition categories using Welch periodograms.
+*   **`Main_freqdomain_extraction.py`**:
+    *   *Objective*: Translates raw acoustic time series into sliding frequency-band relative power features.
+*   **`Utils_FFT.py`, `Utils_freqfeatures.py`, & `Utils_STFT.py`**:
+    *   *Objective*: Implements Fast Fourier Transforms, Short-Time Fourier Transforms (Spectrograms), and Welch periodograms for relative spectral band calculations.
+*   **`untitled0.py`**:
+    *   *Objective*: Simulates powder spread densities and plots dynamic multi-grid KDE overlays for layer-wise print analysis.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+---
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+## 🚀 Execution & Verification
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 📋 Prerequisites
+Set up your python environment (tested on Python 3.13 via Anaconda) and install PyTorch with CUDA support and PyTorch Geometric:
+```bash
+pip install numpy pandas matplotlib networkx scikit-learn
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/pub/whl/cu121
+pip install torch-geometric
+pip install thop  # Optional: for FLOPs profiling
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### 🏃 Running the Core Sensor Fusion Pipeline
+To run the primary GAT-Shapelet fusion model:
+```bash
+cd "Sensor fusion"
+python Main.py
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### 📊 Running the Parameter Optimization Sweep
+To evaluate accuracy, latency, and resource metrics over shapelet counts $k \in [2, ..., 16]$:
+```bash
+cd "Sensor fusion"
+python Main_Shapelet_Optimization.py
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### ⚖️ Running Benchmarks
+To compare against other architectures:
+```bash
+cd "Reviewer_Benchmarking"
+python Run_benchmarks.py
+```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+---
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+## 🔒 Citation & Copyright
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Any reuse of this code should be authorized by the code author:
+**vpsora** (vigneashwara.solairajapandiyan@utu.fi | vigneashpandiyan@gmail.com).

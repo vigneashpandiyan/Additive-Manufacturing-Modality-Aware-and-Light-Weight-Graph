@@ -1,25 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Multimodal Time Series Classification using Graph Attention Networks with Shapelets
+Manuscript: "Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, ExplainableGraph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"
+Author: vpsora
+Contact: vigneashwara.solairajapandiyan@utu.fi, vigneashpandiyan@gmail.com
+Date: May 2026
+Time: 14:04:18
 
-This script implements a novel approach combining shapelet learning with graph attention networks
-for classifying dual-channel time series data. The model learns discriminative shapelets from both
-channels simultaneously and uses them to construct graph representations that are processed by GATs.
+Implementation Includes:
+- A single-modality Graph Neural Network using only acoustic (D2) or optical (D1) shapelet characteristics to classify alloy compositions.
+- Environment setup, data parsing, standard data normalizations, and GNN training/evaluation workflows for unimodal sensor baselines.
 
-Key Features:
-- Joint shapelet learning from both input channels
-- Dynamic graph construction from shapelet distances
-- Multi-head graph attention for feature aggregation
-- Comprehensive visualization of learned patterns
-
-Created on Thu Jun 19 11:14:36 2025
-@author: vpsora
-
-Any reuse of this code should be authorized by the code author.
-Developed for the publication:
-"Modality-Aware and Light-Weight Graph Attention Networkfor In-SituComposition Monitoring 
-in PBF-LB of Graded 316L–CuCrZr Alloys by Sensor Fusion of Optical and Acoustic Emissions"
-
+Note: Any reuse of this code should be authorized by the code author.
 """
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import os
