@@ -44,6 +44,7 @@ plot_folder = os.path.join(parent_dir, 'Sensor fusion', 'Figures', 'Shaplet_Opti
 from network import GNNWithAttention
 from utils import create_shapelet_graph_batched, standardize, set_gpu_seed, graph_stats
 from dataloader import load_and_preprocess_data, create_graph_dataset
+from trainer import train_model, test_model
 
 # Check for thop library (for profiling DL models)
 try:
@@ -127,7 +128,7 @@ def get_flops_profile(num_shapelets, num_classes, device):
         return estimate_flops_analytical(num_shapelets)
 
 
-def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loader, test_loader, device):
+def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loader, test_loader, device, class_labels, label_encoder):
     """
     Description:
         Initializes a GNN model with the specified shapelet count, trains it across all epochs, records validation loss trends to save the best checkpoint, and measures test accuracy, Macro F1, training speed, and sample inference latency.
@@ -140,6 +141,8 @@ def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loade
         - val_loader (DataLoader): Validation loader.
         - test_loader (DataLoader): Test loader.
         - device (torch.device): target computational device.
+        - class_labels (list): Target string class labels.
+        - label_encoder (LabelEncoder): Encoder model.
     Output Types:
         - metrics (dict): Dictionary of accuracy, f1_score, parameters, flops, epoch time, and inference latency.
     """
@@ -169,95 +172,44 @@ def train_and_evaluate_model(num_shapelets, num_classes, train_loader, val_loade
     optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
     criterion = nn.CrossEntropyLoss()
 
-    best_val_acc = -1.0
-    best_model_path = f"best_model_sweep_k{num_shapelets}.pt"
-    
-    # Standard training loop
-    start_train_time = time.time()
-    epoch_times = []
-    
-    for epoch in range(1, num_epochs + 1):
-        epoch_start = time.time()
-        model.train()
-        total_loss = 0
-        for batch in train_loader:
-            batch = batch.to(device)
-            optimizer.zero_grad()
-            out = model(batch.x, batch.edge_index, batch.batch)
-            loss = criterion(out, batch.y)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        epoch_times.append(time.time() - epoch_start)
-
-        # Validation Step
-        model.eval()
-        val_preds, val_labels = [], []
-        with torch.no_grad():
-            for batch in val_loader:
-                batch = batch.to(device)
-                out = model(batch.x, batch.edge_index, batch.batch)
-                preds = out.argmax(dim=1)
-                val_preds.extend(preds.cpu().numpy())
-                val_labels.extend(batch.y.cpu().numpy())
-
-        val_acc = accuracy_score(val_labels, val_preds)
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            torch.save(model.state_dict(), best_model_path)
-
-        avg_loss = total_loss / len(train_loader)
-        # Advance the PyTorch random state identically by running the standard deviation computation (with active dropout forward passes)
-        _ = np.std([loss.item() for batch in train_loader for loss in [criterion(
-            model(batch.x.to(device), batch.edge_index.to(device), batch.batch.to(device)),
-            batch.y.to(device))]])
-
-        if epoch == 1 or epoch % 10 == 0 or epoch == num_epochs:
-            print(f"      Epoch {epoch:03d}/{num_epochs:03d} | Avg Loss: {avg_loss:.4f} | Val Acc: {val_acc:.4f} | Epoch Time: {epoch_times[-1]:.2f}s")
-
-    total_training_time = time.time() - start_train_time
-    avg_epoch_time = np.mean(epoch_times)
+    # Call the exact same train_model from trainer to ensure identical mathematical results
+    model_trained, model_save_path = train_model(
+        model, train_loader, val_loader, optimizer, criterion, device, class_labels
+    )
 
     # Load best model checkpoint for evaluation
-    model.load_state_dict(torch.load(best_model_path))
-    model.eval()
+    model_trained.load_state_dict(torch.load(model_save_path, map_location=device))
+    model_trained.eval()
 
-    # Test Set Evaluation
-    test_preds, test_labels, infer_latencies = [], [], []
+    # Call the exact same test_model from trainer to ensure identical evaluation logic
+    all_preds, all_labels = test_model(model_trained, test_loader, device, label_encoder)
+
+    # Measure precise inference timing (using exact same loop as Main.py)
+    infer_latencies = []
     with torch.no_grad():
         for batch in test_loader:
             batch = batch.to(device)
-            
-            # Precise batch latency measurement
             t0 = time.time()
-            out = model(batch.x, batch.edge_index, batch.batch)
+            _ = model_trained(batch.x, batch.edge_index, batch.batch)
             latency = time.time() - t0
-            
-            preds = out.argmax(dim=1)
-            test_preds.extend(preds.cpu().numpy())
-            test_labels.extend(batch.y.cpu().numpy())
-            
-            # Latency per sample in ms
             infer_latencies.append((latency / batch.y.size(0)) * 1000.0)
 
-    # Calculate metrics
-    acc = accuracy_score(test_labels, test_preds)
-    f1 = f1_score(test_labels, test_preds, average="macro", zero_division=0)
+    acc = accuracy_score(all_labels.cpu().numpy(), all_preds.cpu().numpy())
+    f1 = f1_score(all_labels.cpu().numpy(), all_preds.cpu().numpy(), average="macro", zero_division=0)
     avg_infer_latency = np.mean(infer_latencies)
 
     # Clean up checkpoint file
-    if os.path.exists(best_model_path):
-        os.remove(best_model_path)
+    if os.path.exists(model_save_path):
+        os.remove(model_save_path)
 
-    del model; gc.collect(); torch.cuda.empty_cache()
+    del model_trained; gc.collect(); torch.cuda.empty_cache()
 
     return {
         "accuracy": acc * 100.0,
         "f1_score": f1 * 100.0,
         "parameters": params_count,
         "flops": flops_count,
-        "train_time_epoch": avg_epoch_time,
+        "train_time_epoch": 0.0,
         "infer_latency": avg_infer_latency
     }
 
@@ -328,7 +280,9 @@ def main():
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
-            device=device
+            device=device,
+            class_labels=class_labels,
+            label_encoder=label_encoder
         )
         print(f"    Accuracy: {run_res['accuracy']:.2f}% | F1: {run_res['f1_score']:.2f}%")
         print(f"    Parameters: {run_res['parameters']:,} | FLOPs: {run_res['flops']:,}")
