@@ -1,7 +1,0 @@
-Model,Parameters,Accuracy,Loss Function,Input Dimension,Training Time,Inference Time,FLOPs
-1D-CNN,"44,517",92.33% ± 0.00%,CrossEntropyLoss,"[2, 5000]",386.82 ± 0.00 s,0.029 ± 0.000 ms,"30,328,640"
-CNN-LSTM,"86,117",92.16% ± 0.00%,CrossEntropyLoss,"[2, 5000]",231.45 ± 0.00 s,0.020 ± 0.000 ms,"25,167,552"
-TCN,"115,877",76.60% ± 0.00%,CrossEntropyLoss,"[2, 5000]",5003.44 ± 0.00 s,0.298 ± 0.000 ms,"538,918,720"
-Transformer,"82,053",83.24% ± 0.00%,CrossEntropyLoss,"[2, 5000]",188.75 ± 0.00 s,0.015 ± 0.000 ms,"4,021,408"
-GAT-No-Shapelets,"22,777",78.63% ± 0.00%,CrossEntropyLoss,"19 nodes x [2, 500]",343.82 ± 0.00 s,0.046 ± 0.000 ms,"386,248"
-GCN-No-Shapelets,"22,617",76.65% ± 0.00%,CrossEntropyLoss,"19 nodes x [2, 500]",297.60 ± 0.00 s,0.039 ± 0.000 ms,"386,248"
