@@ -48,7 +48,7 @@ The shapelets, graph-attention layers, and classifier are optimized jointly in a
 
 ```directory
 ├── Features Visualization/      # Frequency-domain spectral features & signal diagnostics
-├── Reviewer_Benchmarking/       # Comprehensive baseline models & LaTeX helper tools
+├── Model Benchmarking/          # Comprehensive baseline models & LaTeX helper tools
 ├── Sensor fusion/               # Core multi-modal GAT-Shapelet framework code
 ├── Unimodal/                    # Single-modality baselines (Optical or Acoustic alone)
 └── Data/                        # [Input Target] Holds raw .npy signal spaces and labels
@@ -56,77 +56,15 @@ The shapelets, graph-attention layers, and classifier are optimized jointly in a
 
 ---
 
-## ⚙️ Folder Contents & Script Implementations
+## ⚙️ Folder Contents & Components
 
-### 1. 🧠 `Sensor fusion/` (Core Multi-Modal Framework)
-This is the main component of the project, orchestrating the multi-modal sensor fusion pipeline.
+| Folder / Component | Objective | Key Files / Subdirectories |
+| :--- | :--- | :--- |
+| **🧠 [Sensor fusion/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion)** | Core multi-modal sensor fusion pipeline orchestrating the GAT-Shapelet framework. | <ul><li>[Config.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/Config.py)</li><li>[Main.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/Main.py)</li><li>[Main_Shapelet_Optimization.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/Main_Shapelet_Optimization.py)</li><li>[dataloader/data_loader.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/dataloader/data_loader.py)</li><li>[network/Network.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/network/Network.py)</li><li>[trainer/Trainer.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/trainer/Trainer.py)</li><li>[utils/Inference.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/utils/Inference.py) / [Utils.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/utils/Utils.py)</li><li>[visualization/Graph.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/visualization/Graph.py) / [Visualization.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Sensor%20fusion/visualization/Visualization.py)</li></ul> |
+| **🎛️ [Model Benchmarking/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking)** | Evaluation suite comparing the GAT-Shapelet against seven sequence, graph, and ML baselines. | <ul><li>[Run_benchmarks.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking/Run_benchmarks.py)</li><li>[Dataloader/data_loader.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking/Dataloader/data_loader.py) / [features.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking/Dataloader/features.py)</li><li>[Network/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking/Network) (CNN, LSTM, TCN, GAT, GCN)</li><li>[Utils/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking/Utils) (Metrics & LaTeX reporting)</li><li>[Visualization/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Model%20Benchmarking/Visualization) (Plots & matrices)</li></ul> |
+| **📻 [Unimodal/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Unimodal)** | Single-modality baselines (Optical or Acoustic alone) to quantify the benefits of sensor fusion. | <ul><li>[Shaplet_Unimodal.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Unimodal/Shaplet_Unimodal.py)</li><li>[trainer.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Unimodal/trainer.py)</li><li>[utils.py](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Unimodal/utils.py)</li></ul> |
+| **📦 [Data/](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Data)** | Repository input storage for datasets and layout illustrations. | <ul><li>[File Location.md](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Data/File%20Location.md)</li><li>[Figure 1.jpg](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Data/Figure%201.jpg) / [2.jpg](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Data/Figure%202.jpg) / [3.jpg](file:///c:/Cloud/Github/Additive-Manufacturing-Modality-Aware-and-Light-Weight-Graph/Data/Figure%203.jpg)</li></ul> |
 
-*   **`Config.py`**:
-    *   *Objective*: Establishes global reproducibility parameters (random seeds), directories, dataset targets, validation sizes, and hyperparameters (`batch_size=256`, `num_epochs=300`, `shapelet_len=50`, `num_shapelets=10`).
-*   **`Main.py`**:
-    *   *Objective*: Orchestrates the end-to-end framework. Initializes environments, standardizes datasets, structures graph representations, trains/tests the model, saves checkpoints, and runs visual explanation utilities.
-*   **`Main_Shapelet_Optimization.py`**:
-    *   *Objective*: Executes a systematic sweep over shapelet counts ($k \in [2, 4, ..., 16]$) to profile model accuracy against parameter count, execution times, and computational FLOPs.
-*   **`dataloader/data_loader.py`**:
-    *   *Objective*: Implements stratified resampling to balance target compositions, standardizes sensors, and packages multi-channel signals into structured PyTorch Geometric `Data` graphs.
-*   **`network/Network.py`**:
-    *   *Objective*: Implements the GNN architecture:
-        *   `BatchedShapeletExtractor`: A parallel learnable shapelet layer mapping signal segments to node features.
-        *   `GNNWithAttention`: Fuses optical and acoustic node features using a 3-layer GAT structure, global average pooling, and classifier MLP.
-*   **`trainer/Trainer.py`**:
-    *   *Objective*: Handles core execution loops, parameter tracking, validation callbacks, checkpoint saves, and outputs training loss/validation curves.
-*   **`utils/Inference.py` & `Utils.py`**:
-    *   *Objective*: Performs saliency-based gradient backpropagation to evaluate channel/node contributions, and manages standardized GPU seed initializations.
-*   **`visualization/Graph.py` & `Visualization.py`**:
-    *   *Objective*: Generates high-fidelity explanatory figures: attention heatmaps, spatial spring layout graphs, PCA/t-SNE/UMAP dimension embeddings, and shapelet activation curves.
-
----
-
-### 2. 🎛️ `Reviewer_Benchmarking/` (Benchmarking Suite)
-Developed to benchmark the proposed framework against alternative deep learning sequence models.
-
-*   **`Run_benchmarks.py`**:
-    *   *Objective*: Executes repeated training sweeps across multiple architectures, logging test scores, latencies, memory footprints, and parameters.
-*   **`BenchmarkDataloader/data_loader.py` & `features.py`**:
-    *   *Objective*: Restructures raw signals into 1D sequences and sequences with statistical moments tailored for conventional architectures.
-*   **`BenchmarkNetwork/`**:
-    *   *Objective*: Houses baseline architectures:
-        *   `cnn_1d.py` / `cnn_lstm.py`: Spatial and temporal convolutional baselines.
-        *   `tcn.py` / `transformer.py`: Causal temporal convolutions and self-attention sequence models.
-        *   `gcn_no_shapelets.py` / `gat_no_shapelets.py`: Graph GCN/GAT architectures using direct statistical features instead of learnable shapelets.
-        *   `shapelet_gat.py`: Standard learnable shapelet attention baseline.
-*   **`BenchmarkUtils/helpers.py`, `statistics.py`, & `latex_table.py`**:
-    *   *Objective*: Calculates Peak FLOPs/Latency profiles, evaluates statistical confidence intervals (95% CI), performs Wilcoxon rank-sum tests, and formats benchmarking tables directly into LaTeX.
-*   **`BenchmarkVisualization/plotting.py`**:
-    *   *Objective*: Renders comparative accuracy vs complexity plots and benchmarking performance heatmaps.
-
----
-
-### 3. 📻 `Unimodal/` (Single-Modality Baselines)
-Evaluates GAT-Shapelet performance on individual modalities alone to quantify the advantages of sensor fusion.
-
-*   **`Shaplet_Unimodal.py`**:
-    *   *Objective*: Evaluates performance exclusively using either Optical emission (D1) or Acoustic emission (D2) signals.
-*   **`trainer.py`**:
-    *   *Objective*: Provides single-modality adapters for `BatchedShapeletExtractor` and `GNNWithAttention`.
-*   **`utils.py`**:
-    *   *Objective*: Manages data pre-scaling, graph translation from 1D waveforms, and dataset stats logging.
-
----
-
-### 4. 📈 `Features Visualization/` (Signal Processing & Extraction)
-Explores raw sensor behaviors and generates baseline diagnostic plots.
-
-*   **`Channel Visualize.py`**:
-    *   *Objective*: Extracts and compares optical/acoustic frequencies across all composition percentages.
-*   **`Main_EnergyBands plot.py`**:
-    *   *Objective*: Computes global relative power distributions and maps them to composition categories using Welch periodograms.
-*   **`Main_freqdomain_extraction.py`**:
-    *   *Objective*: Translates raw acoustic time series into sliding frequency-band relative power features.
-*   **`Utils_FFT.py`, `Utils_freqfeatures.py`, & `Utils_STFT.py`**:
-    *   *Objective*: Implements Fast Fourier Transforms, Short-Time Fourier Transforms (Spectrograms), and Welch periodograms for relative spectral band calculations.
-*   **`untitled0.py`**:
-    *   *Objective*: Simulates powder spread densities and plots dynamic multi-grid KDE overlays for layer-wise print analysis.
 
 ---
 
@@ -158,7 +96,7 @@ python Main_Shapelet_Optimization.py
 ### ⚖️ Running Benchmarks
 To compare against other architectures:
 ```bash
-cd "Reviewer_Benchmarking"
+cd "Model Benchmarking"
 python Run_benchmarks.py
 ```
 

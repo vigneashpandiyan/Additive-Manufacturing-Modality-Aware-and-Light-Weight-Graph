@@ -17,7 +17,7 @@ import sys
 
 # Resolve paths
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # Network/
-BENCHMARK_DIR = os.path.dirname(CURRENT_DIR)             # Reviewer_Benchmarking/
+BENCHMARK_DIR = os.path.dirname(CURRENT_DIR)             # Model Benchmarking/
 PROJECT_ROOT = os.path.dirname(BENCHMARK_DIR)            # Project Root
 SENSOR_FUSION_DIR = os.path.join(PROJECT_ROOT, "Sensor fusion")
 if SENSOR_FUSION_DIR not in sys.path:

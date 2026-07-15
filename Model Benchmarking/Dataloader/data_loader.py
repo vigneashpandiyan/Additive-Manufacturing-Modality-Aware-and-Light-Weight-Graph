@@ -23,7 +23,7 @@ from sklearn.model_selection import train_test_split
 
 # Resolve paths dynamically relative to subfolder
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # dataloader/
-BENCHMARK_DIR = os.path.dirname(CURRENT_DIR)             # Reviewer_Benchmarking/
+BENCHMARK_DIR = os.path.dirname(CURRENT_DIR)             # Model Benchmarking/
 PROJECT_ROOT = os.path.dirname(BENCHMARK_DIR)            # Project Root
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)

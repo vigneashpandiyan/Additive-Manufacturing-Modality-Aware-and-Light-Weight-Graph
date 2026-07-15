@@ -1,4 +1,4 @@
-# Reviewer Benchmarking Pipeline
+# Model Benchmarking Pipeline
 
 This directory contains a complete, isolated benchmarking pipeline designed to evaluate the proposed **Shapelet–GAT** model against seven diverse baseline models. 
 
@@ -17,7 +17,7 @@ All neural network models share equivalent downstream classifier structures to e
 
 ## Environment Setup & Requirements
 The pipeline has been verified on this machine with the local Anaconda environment:
-* **Python Path**: `C:\Users\vpsora\AppData\Local\anaconda3\python.exe`
+* **Python Path**: `C:\Users\vigne\anaconda3\python.exe`
 * **GPU Accelerator**: `NVIDIA RTX PRO 4000 Blackwell` (CUDA Available: True)
 * **Required Libraries**: `torch`, `torch-geometric`, `thop` (for FLOPs), `scikit-learn`, `scipy`, `pandas`, `matplotlib`, `psutil`.
 
@@ -27,12 +27,12 @@ The pipeline has been verified on this machine with the local Anaconda environme
 
 To run a fast, end-to-end dry-run (verifies compilation, loading, feature extraction, and reporting with 1 epoch and 200 samples):
 ```bash
-$env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vpsora\AppData\Local\anaconda3\python.exe" run_benchmarks.py --debug
+$env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vigne\anaconda3\python.exe" run_benchmarks.py --debug
 ```
 
 To run the complete full benchmarking suite (default: 3 seeds, 30 epochs):
 ```bash
-$env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vpsora\AppData\Local\anaconda3\python.exe" run_benchmarks.py
+$env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vigne\anaconda3\python.exe" run_benchmarks.py
 ```
 
 ### Model-specific flags (True / False)
@@ -40,7 +40,7 @@ You can selectively enable or disable individual models by passing `--model_name
 
 For example, to run only the Proposed Shapelet-GAT and the Random Forest baseline:
 ```bash
-$env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vpsora\AppData\Local\anaconda3\python.exe" run_benchmarks.py --cnn_1d False --cnn_lstm False --tcn False --transformer False --gat_no_shapelets False --gcn_no_shapelets False
+$env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vigne\anaconda3\python.exe" run_benchmarks.py --cnn_1d False --cnn_lstm False --tcn False --transformer False --gat_no_shapelets False --gcn_no_shapelets False
 ```
 
 ### Script CLI Arguments:
@@ -52,7 +52,7 @@ $env:KMP_DUPLICATE_LIB_OK="TRUE"; & "C:\Users\vpsora\AppData\Local\anaconda3\pyt
 ---
 
 ## Outputs & Deliverables
-All results and figures are exported to the `Reviewer_Benchmarking/outputs/` directory:
+All results and figures are exported to the `Model Benchmarking/outputs/` directory:
 1. `results_per_seed.csv`: Performance metrics per model for each seed run.
 2. `results_aggregated.csv`: Aggregated metrics (Mean $\pm$ 95% Confidence Interval), training/inference times, and memory/FLOPs consumption.
 3. `performance_comparison.png`: Professional bar chart of F1 and Accuracy with 95% CI error bars.

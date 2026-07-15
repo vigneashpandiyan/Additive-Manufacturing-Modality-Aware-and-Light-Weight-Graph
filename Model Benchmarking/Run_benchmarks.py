@@ -36,13 +36,13 @@ if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
 # Package Imports
-from BenchmarkDataloader import load_raw_data, get_sequence_datasets, get_graph_datasets, extract_all_features
-from BenchmarkNetwork import (CNN1D, CNNLSTM, TCN, TransformerClassifier,
+from Dataloader import load_raw_data, get_sequence_datasets, get_graph_datasets, extract_all_features
+from Network import (CNN1D, CNNLSTM, TCN, TransformerClassifier,
                               GATWithoutShapelets, GCNWithoutShapelets, GNNWithAttention)
-from BenchmarkVisualization import (generate_plots, plot_model_confusion_matrices, 
+from Visualization import (generate_plots, plot_model_confusion_matrices, 
                                     plot_training_val_curves, plot_cumulative_val_curves,
                                     plot_model_complexities, generate_resource_comparison_plots)
-from BenchmarkUtils import (get_peak_memory, reset_memory_tracker, get_parameter_count,
+from Utils import (get_peak_memory, reset_memory_tracker, get_parameter_count,
                             estimate_flops, train_and_eval_dl, compute_95_ci,
                             run_statistical_test, generate_latex_table)
 

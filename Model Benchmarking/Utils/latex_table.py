@@ -35,7 +35,7 @@ def generate_latex_table(aggregated_df, p_values_dict, save_folder):
     latex_lines.append(r"\begin{table*}[t]")
     latex_lines.append(r"\centering")
     latex_lines.append(r"\caption{Comparative benchmarking of the proposed Modality-Aware Shapelet--GAT against state-of-the-art baselines across multiple seeds. Metrics report Mean $\pm$ 95\% Confidence Interval. Statistical significance compared to the proposed model is indicated by $^{*}$ ($p < 0.05$) or $^{**}$ ($p < 0.01$).}")
-    latex_lines.append(r"\label{tab:reviewer_benchmarking}")
+    latex_lines.append(r"\label{tab:model_benchmarking}")
     latex_lines.append(r"\begin{tabular}{lcccccc}")
     latex_lines.append(r"\hline")
     latex_lines.append(r"\textbf{Model} & \textbf{Accuracy (\%)} & \textbf{Precision (\%)} & \textbf{Recall (\%)} & \textbf{F1-Score (\%)} & \textbf{ROC-AUC} & \textbf{Parameters (K)} \\")
