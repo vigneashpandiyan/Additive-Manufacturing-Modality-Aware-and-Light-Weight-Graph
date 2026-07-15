@@ -1,5 +1,3 @@
-# Learning Composition-Sensitive Signatures in Multi-Material PBF-LB
-
 ## A lightweight, modality-aware, and explainable Shapelet–GAT framework for graded 316L–CuCrZr alloys
 
 This repository provides the implementation, benchmarking scripts, and visualization utilities associated with the article:
@@ -13,15 +11,7 @@ This repository provides the implementation, benchmarking scripts, and visualiza
 
 ## Scientific motivation
 
-Process monitoring in multi-material laser powder bed fusion (PBF-LB) is more difficult than monitoring a single alloy because the physical response of the melt pool changes continuously with local composition.
-
-The graded 316L–CuCrZr system considered here combines materials with markedly different:
-
-- optical absorptivity and reflectivity near the processing-laser wavelength,
-- thermal conductivity,
-- melting and solidification behavior,
-- melt-pool geometry and stability,
-- phase formation and cracking susceptibility.
+Process monitoring in multi-material laser powder bed fusion (PBF-LB) is inherently more complex than in single-alloy processing because the melt-pool response evolves with local composition. In the graded 316L–CuCrZr system, changes in CuCrZr content influence optical absorptivity and reflectivity near the processing-laser wavelength, thermal conductivity, melting and solidification behavior, melt-pool geometry and stability, and phase formation and cracking susceptibility. Consequently, the measured process emissions vary across the compositional gradient, requiring monitoring strategies capable of resolving both material-dependent and process-dependent changes.
 
 ![Experimental Setup](Data/Figure%201.jpg)
 
@@ -45,7 +35,7 @@ The method combines:
 2. **Temporal graph construction** in which overlapping signal segments form graph nodes.
 3. **Graph attention** for learning the relative importance of temporal segments and their interactions.
    
-   ![Graph Connection](Data/Figure%202.jpg)
+   <img src="Data/Figure%202.jpg" width="60%" alt="Graph Connection" />
 
 4. **Modality-aware interpretation** through channel saliency, shapelet activation, and node-wise attribution.
 5. **Compact parameterization** with only **3,753 trainable parameters**, reported as approximately **3.8k parameters**.
