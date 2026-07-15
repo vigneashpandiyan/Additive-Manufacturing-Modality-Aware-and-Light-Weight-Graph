@@ -1,18 +1,54 @@
-# Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, Explainable Graph-Attention Sensor Fusion Framework
+# Learning Composition-Sensitive Signatures in Multi-Material PBF-LB
 
-This repository contains the complete implementation and benchmarking suite for the manuscript:
-**"Learning Composition-Sensitive Signatures in Multi-Material PBF-LB: A Lightweight, Modality-Aware, Explainable Graph-Attention Sensor Fusion Framework for In-Situ Monitoring of Graded 316L–CuCrZr Alloys"**
+## A lightweight, modality-aware, and explainable Shapelet–GAT framework for graded 316L–CuCrZr alloys
 
-Author: **vpsora**  
-Contact: vigneashwara.solairajapandiyan@utu.fi | vigneashpandiyan@gmail.com  
+This repository provides the implementation, benchmarking scripts, and visualization utilities associated with the article:
+
+> **Learning composition-sensitive signatures in multi-material PBF-LB: a lightweight, modality-aware, explainable graph-attention sensor fusion framework for in-situ monitoring of graded 316L–CuCrZr alloys**
+
+**Journal:** *Progress in Additive Manufacturing*  
+**DOI:** [10.1007/s40964-026-01854-x](https://doi.org/10.1007/s40964-026-01854-x)
 
 ---
 
-## 📖 Framework Overview
+## Scientific motivation
 
-This framework utilizes a novel **Shapelet-based Graph Attention Network (GAT)** to perform in-situ composition monitoring of graded multi-material alloys (316L Stainless Steel and CuCrZr) manufactured via laser powder bed fusion (PBF-LB). 
+Process monitoring in multi-material laser powder bed fusion (PBF-LB) is more difficult than monitoring a single alloy because the physical response of the melt pool changes continuously with local composition.
 
-By extracting sliding temporal windows from co-axial optical and acoustic emissions, representing them as graph nodes, and learning discriminative shapelet matching distances, the network dynamically maps multi-modal signatures into a cohesive, explainable spatial attention graph.
+The graded 316L–CuCrZr system considered here combines materials with markedly different:
+
+- optical absorptivity and reflectivity near the processing-laser wavelength,
+- thermal conductivity,
+- melting and solidification behavior,
+- melt-pool geometry and stability,
+- phase formation and cracking susceptibility.
+
+As the CuCrZr fraction increases, the melt pool becomes shallower and the process transitions from deeper keyhole or transition-mode behavior toward conduction-mode melting. Cu-rich regions also exhibit higher reflectivity near the laser wavelength. These changes influence the measured process emissions in different ways:
+
+- **Acoustic emission (AE)** reflects melt-pool dynamics, mechanical transients, process instabilities, and changes in acoustic energy distribution.
+- **Back-reflected optical emission (OE)** is sensitive to changes in laser–material coupling, absorptivity, reflectivity, and process-zone intensity.
+
+No single sensing modality captures all composition-dependent effects consistently across the full gradient. The framework therefore treats multimodal sensing as a physically necessary source of complementary information rather than as a simple increase in input dimensionality.
+
+---
+
+## Main contribution
+
+The repository implements a **Shapelet–Graph Attention Network (Shapelet–GAT)** that learns composition-sensitive signatures directly from synchronized AE and OE time series.
+
+The method combines:
+
+1. **Learnable channel-wise shapelets** for extracting localized and class-discriminative temporal motifs.
+2. **Temporal graph construction** in which overlapping signal segments form graph nodes.
+3. **Graph attention** for learning the relative importance of temporal segments and their interactions.
+4. **Modality-aware interpretation** through channel saliency, shapelet activation, and node-wise attribution.
+5. **Compact parameterization** with only **3,753 trainable parameters**, reported as approximately **3.8k parameters**.
+
+The shapelets, graph-attention layers, and classifier are optimized jointly in a single end-to-end learning process.
+
+---
+
+## 🔬 Framework Architecture & Setup
 
 ### 🔬 1. Experimental Setup
 ![Experimental Setup](Data/Figure%201.jpg)
@@ -27,6 +63,7 @@ By extracting sliding temporal windows from co-axial optical and acoustic emissi
 *Figure 3: End-to-end code pipeline representing the dual-modality feature extraction, learnable shapelet networks, graph attention convolutions (GAT), pooling, and alloy composition estimation.*
 
 ---
+
 
 ## 📁 Repository Directory Structure
 
