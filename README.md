@@ -70,35 +70,16 @@ The shapelets, graph-attention layers, and classifier are optimized jointly in a
 
 ## 🚀 Execution & Verification
 
-### 📋 Prerequisites
-Set up your python environment (tested on Python 3.13 via Anaconda) and install PyTorch with CUDA support and PyTorch Geometric:
+### 📋 Setup & Prerequisites
 ```bash
-pip install numpy pandas matplotlib networkx scikit-learn
+pip install numpy pandas matplotlib networkx scikit-learn torch-geometric thop
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/pub/whl/cu121
-pip install torch-geometric
-pip install thop  # Optional: for FLOPs profiling
 ```
 
-### 🏃 Running the Core Sensor Fusion Pipeline
-To run the primary GAT-Shapelet fusion model:
-```bash
-cd "Sensor fusion"
-python Main.py
-```
-
-### 📊 Running the Parameter Optimization Sweep
-To evaluate accuracy, latency, and resource metrics over shapelet counts $k \in [2, ..., 16]$:
-```bash
-cd "Sensor fusion"
-python Main_Shapelet_Optimization.py
-```
-
-### ⚖️ Running Benchmarks
-To compare against other architectures:
-```bash
-cd "Model Benchmarking"
-python Run_benchmarks.py
-```
+### 🏃 Running Pipelines
+* **Core Pipeline:** `cd "Sensor fusion" && python Main.py` (Runs the primary GAT-Shapelet model)
+* **Parameter Sweep:** `cd "Sensor fusion" && python Main_Shapelet_Optimization.py` (Sweeps shapelet count $k \in [2, ..., 16]$)
+* **Model Benchmarking:** `cd "Model Benchmarking" && python Run_benchmarks.py` (Compares against 7 baseline architectures)
 
 ---
 
