@@ -14,26 +14,17 @@ This framework utilizes a novel **Shapelet-based Graph Attention Network (GAT)**
 
 By extracting sliding temporal windows from co-axial optical and acoustic emissions, representing them as graph nodes, and learning discriminative shapelet matching distances, the network dynamically maps multi-modal signatures into a cohesive, explainable spatial attention graph.
 
-```mermaid
-graph TD
-    A[Multi-Material PBF-LB Emissions] --> B[Acoustic Emissions Ch1]
-    A --> C[Optical Emissions Ch2]
-    
-    B --> D[Sliding Window Segmentation]
-    C --> E[Sliding Window Segmentation]
-    
-    D --> F[Temporal Graph Nodes - 19 Nodes]
-    E --> F
-    
-    F --> G[Parallel BatchedShapeletExtractor]
-    G --> H[Distance Feature Adjacency]
-    
-    H --> I[GNNWithAttention - GAT Layers]
-    I --> J[Global Mean Pooling]
-    
-    J --> K[Classifier MLP]
-    K --> L[Composition Level: 20% to 100% Cu]
-```
+### 🔬 1. Experimental Setup
+![Experimental Setup](Data/Figure%201.jpg)
+*Figure 1: In-situ multi-modal sensor monitoring experimental setup for the PBF-LB manufacturing process.*
+
+### 🕸️ 2. Graph Connection
+![Graph Connection](Data/Figure%202.jpg)
+*Figure 2: Structure of signal segment sequence nodes and the temporal-spatial graph connections.*
+
+### 💻 3. Code Pipeline
+![Code Pipeline](Data/Figure%203.jpg)
+*Figure 3: End-to-end code pipeline representing the dual-modality feature extraction, learnable shapelet networks, graph attention convolutions (GAT), pooling, and alloy composition estimation.*
 
 ---
 
@@ -159,5 +150,32 @@ python Run_benchmarks.py
 
 ## 🔒 Citation & Copyright
 
+If you use this work, please cite:
+
+**Title:** Learning composition-sensitive signatures in multi-material PBF-LB: a lightweight, modality-aware, explainable graph-attention sensor fusion framework for in-situ monitoring of graded 316L–CuCrZr alloys
+**DOI:** [10.1007/s40964-026-01854-x](https://doi.org/10.1007/s40964-026-01854-x)
+**Article Type:** Research
+**Journal:** Progress in Additive Manufacturing
+
+**Authors:**
+Vigneashwara Pandiyan<sup>a,*</sup>, Antonios Baganis<sup>b,c</sup>, Antti Salminen<sup>a</sup>, Christian Leinenbach<sup>b,c</sup>
+
+*   <sup>a</sup> Digital Manufacturing and Surface Engineering (DMS), Department of Mechanical and Materials Engineering, University of Turku, FI-20014, Turun yliopisto, Finland.
+*   <sup>b</sup> Laboratory for Advanced Materials Processing (LAMP), Swiss Federal Laboratories for Materials Science and Technology (Empa)-CH-3602 Thun, Switzerland.
+*   <sup>c</sup> Laboratory for Photonic Materials and Characterization, Ecole Polytechnique Fédérale de Lausanne, 1015 Lausanne, Switzerland.
+
+### Citation Format (BibTeX)
+```bibtex
+@article{pandiyan2026learning,
+  title={Learning composition-sensitive signatures in multi-material PBF-LB: a lightweight, modality-aware, explainable graph-attention sensor fusion framework for in-situ monitoring of graded 316L--CuCrZr alloys},
+  author={Pandiyan, Vigneashwara and Baganis, Antonios and Salminen, Antti and Leinenbach, Christian},
+  journal={Progress in Additive Manufacturing},
+  year={2026},
+  doi={10.1007/s40964-026-01854-x},
+  publisher={Springer}
+}
+```
+
 Any reuse of this code should be authorized by the code author:
 **vpsora** (vigneashwara.solairajapandiyan@utu.fi | vigneashpandiyan@gmail.com).
+
