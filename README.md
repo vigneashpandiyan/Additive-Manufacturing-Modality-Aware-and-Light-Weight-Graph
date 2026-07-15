@@ -24,7 +24,6 @@ The graded 316L–CuCrZr system considered here combines materials with markedly
 - phase formation and cracking susceptibility.
 
 ![Experimental Setup](Data/Figure%201.jpg)
-*Figure 1: In-situ multi-modal sensor monitoring experimental setup for the PBF-LB manufacturing process.*
 
 As the CuCrZr fraction increases, the melt pool becomes shallower and the process transitions from deeper keyhole or transition-mode behavior toward conduction-mode melting. Cu-rich regions also exhibit higher reflectivity near the laser wavelength. These changes influence the measured process emissions in different ways:
 
@@ -34,7 +33,6 @@ As the CuCrZr fraction increases, the melt pool becomes shallower and the proces
 No single sensing modality captures all composition-dependent effects consistently across the full gradient. The framework therefore treats multimodal sensing as a physically necessary source of complementary information rather than as a simple increase in input dimensionality.
 
 ![Code Pipeline](Data/Figure%203.jpg)
-*Figure 3: End-to-end code pipeline representing the dual-modality feature extraction, learnable shapelet networks, graph attention convolutions (GAT), pooling, and alloy composition estimation.*
 ---
 
 ## Main contribution
@@ -46,10 +44,8 @@ The method combines:
 1. **Learnable channel-wise shapelets** for extracting localized and class-discriminative temporal motifs.
 2. **Temporal graph construction** in which overlapping signal segments form graph nodes.
 3. **Graph attention** for learning the relative importance of temporal segments and their interactions.
-
-![Graph Connection](Data/Figure%202.jpg)
-*Figure 2: Structure of signal segment sequence nodes and the temporal-spatial graph connections.*
-
+   
+   ![Graph Connection](Data/Figure%202.jpg)
 
 4. **Modality-aware interpretation** through channel saliency, shapelet activation, and node-wise attribution.
 5. **Compact parameterization** with only **3,753 trainable parameters**, reported as approximately **3.8k parameters**.
