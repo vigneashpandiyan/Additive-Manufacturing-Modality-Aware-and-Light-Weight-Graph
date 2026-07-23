@@ -101,7 +101,7 @@ Vigneashwara Pandiyan<sup>a,*</sup>, Antonios Baganis<sup>b,c</sup>, Antti Salmi
 
 ### Citation Format (BibTeX)
 ```bibtex
-@article{pandiyan2026learning,
+@article{pandiyan2026,
   title={Learning composition-sensitive signatures in multi-material PBF-LB: a lightweight, modality-aware, explainable graph-attention sensor fusion framework for in-situ monitoring of graded 316L--CuCrZr alloys},
   author={Pandiyan, Vigneashwara and Baganis, Antonios and Salminen, Antti and Leinenbach, Christian},
   journal={Progress in Additive Manufacturing},
